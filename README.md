@@ -170,12 +170,12 @@ OFDM 把一路高速数据拆成 N 路低速正交子载波，用 CP 把线性�
 
 ```mermaid
 graph TB
-    ROOT[通信工程知识体系] --> COMM[通信原理 (17)]
-    ROOT --> DSP[信号与系统 + DSP (16)]
-    ROOT --> MOB[移动通信 (18)]
-    ROOT --> RSP[随机信号处理 (15)]
-    ROOT --> EMF[电磁场 (1)]
-    ROOT --> NET[计算机网络 (6)]
+    ROOT[通信工程知识体系] --> COMM[通信原理（17）]
+    ROOT --> DSP[信号与系统 + DSP（16）]
+    ROOT --> MOB[移动通信（18）]
+    ROOT --> RSP[随机信号处理（15）]
+    ROOT --> EMF[电磁场（1）]
+    ROOT --> NET[计算机网络（6）]
 
     COMM --> C1[模拟调制]
     COMM --> C2[信道]
