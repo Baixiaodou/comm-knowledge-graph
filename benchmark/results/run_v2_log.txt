@@ -1,0 +1,202 @@
+知识库加载完成：全量 16901 字符 | 树目录 1277 字符
+题库：27 题
+模型：3 个，共 6 组（裸跑 + 知识库）
+
+=== deepseek-chat [bare] ===
+  [comm-L3-001] L3 分=9
+  [comm-L3-002] L3 分=8
+  [comm-L3-003] L3 分=8
+  [comm-L3-004] L3 分=8
+  [comm-L3-005] L3 分=8
+  [comm-L3-006] L3 分=7
+  [comm-L3-007] L3 分=9
+  [comm-L3-008] L3 分=8
+  [comm-L3-009] L3 分=8
+  [comm-L3-010] L3 分=9
+  [comm-L4-001] L4 分=8
+  [comm-L4-002] L4 分=9
+  [comm-L4-003] L4 分=8
+  [comm-L4-004] L4 分=9
+  [comm-L4-005] L4 分=8
+  [comm-L3-011] L3 分=8
+  [comm-L3-012] L3 分=9
+  [comm-L3-013] L3 分=9
+  [comm-L3-014] L3 分=8
+  [comm-L3-015] L3 分=9
+  [comm-L3-016] L3 分=9
+  [comm-L3-017] L3 分=8
+  [comm-L3-018] L3 分=9
+  [comm-L3-019] L3 分=9
+  [comm-L3-020] L3 分=9
+  [comm-L4-006] L4 分=8
+  [comm-L4-007] L4 分=8
+
+=== deepseek-chat [with_kb] ===
+  [comm-L3-001] L3 分=7
+  [comm-L3-002] L3 分=9
+  [comm-L3-003] L3 分=8
+  [comm-L3-004] L3 分=8
+  [comm-L3-005] L3 分=9
+  [comm-L3-006] L3 分=10
+  [comm-L3-007] L3 分=8
+  [comm-L3-008] L3 分=9
+  [comm-L3-009] L3 分=9
+  [comm-L3-010] L3 分=9
+  [comm-L4-001] L4 分=8
+  [comm-L4-002] L4 分=9
+  [comm-L4-003] L4 分=9
+  [comm-L4-004] L4 分=9
+  [comm-L4-005] L4 分=9
+  [comm-L3-011] L3 分=9
+  [comm-L3-012] L3 分=9
+  [comm-L3-013] L3 分=6
+  [comm-L3-014] L3 分=9
+  [comm-L3-015] L3 分=8
+  [comm-L3-016] L3 分=8
+  [comm-L3-017] L3 分=8
+  [comm-L3-018] L3 分=9
+  [comm-L3-019] L3 分=9
+  [comm-L3-020] L3 分=9
+  [comm-L4-006] L4 分=9
+  [comm-L4-007] L4 分=9
+
+=== Qwen/Qwen2.5-7B-Instruct [bare] ===
+  [comm-L3-001] L3 分=3
+  [comm-L3-002] L3 分=6
+  [comm-L3-003] L3 分=6
+  [comm-L3-004] L3 分=3
+  [comm-L3-005] L3 分=7
+  [comm-L3-006] L3 分=0
+  [comm-L3-007] L3 分=5
+  [comm-L3-008] L3 分=6
+  [comm-L3-009] L3 分=8
+  [comm-L3-010] L3 分=8
+  [comm-L4-001] L4 分=8
+  [comm-L4-002] L4 分=3
+  [comm-L4-003] L4 分=4
+  [comm-L4-004] L4 分=7
+  [comm-L4-005] L4 分=6
+  [comm-L3-011] L3 分=1
+  [comm-L3-012] L3 分=4
+  [comm-L3-013] L3 分=0
+  [comm-L3-014] L3 分=0
+  [comm-L3-015] L3 分=2
+  [comm-L3-016] L3 分=-1
+  [comm-L3-017] L3 分=6
+  [comm-L3-018] L3 分=5
+  [comm-L3-019] L3 分=7
+  [comm-L3-020] L3 分=8
+  [comm-L4-006] L4 分=6
+  [comm-L4-007] L4 分=7
+
+=== Qwen/Qwen2.5-7B-Instruct [with_kb] ===
+  [comm-L3-001] L3 分=2
+  [comm-L3-002] L3 分=8
+  [comm-L3-003] L3 分=7
+  [comm-L3-004] L3 分=6
+  [comm-L3-005] L3 分=5
+  [comm-L3-006] L3 分=2
+  [comm-L3-007] L3 分=6
+  [comm-L3-008] L3 分=5
+  [comm-L3-009] L3 分=8
+  [comm-L3-010] L3 分=8
+  [comm-L4-001] L4 分=8
+  [comm-L4-002] L4 分=6
+  [comm-L4-003] L4 分=7
+  [comm-L4-004] L4 分=6
+  [comm-L4-005] L4 分=7
+  [comm-L3-011] L3 分=1
+  [comm-L3-012] L3 分=1
+  [comm-L3-013] L3 分=5
+  [comm-L3-014] L3 分=0
+  [comm-L3-015] L3 分=2
+  [comm-L3-016] L3 分=7
+  [comm-L3-017] L3 分=7
+  [comm-L3-018] L3 分=3
+  [comm-L3-019] L3 分=8
+  [comm-L3-020] L3 分=7
+  [comm-L4-006] L4 分=7
+  [comm-L4-007] L4 分=4
+
+=== Qwen/Qwen3-8B [bare] ===
+  [comm-L3-001] L3 分=4
+  [comm-L3-002] L3 分=8
+  [comm-L3-003] L3 分=8
+  [comm-L3-004] L3 分=8
+  [comm-L3-005] L3 分=9
+  [comm-L3-006] L3 分=8
+  [comm-L3-007] L3 分=8
+  [comm-L3-008] L3 分=9
+  [comm-L3-009] L3 分=8
+  [comm-L3-010] L3 分=9
+  [comm-L4-001] L4 分=9
+  [comm-L4-002] L4 分=8
+  [comm-L4-003] L4 分=8
+  [comm-L4-004] L4 分=8
+  [comm-L4-005] L4 分=8
+  [comm-L3-011] L3 分=7
+  [comm-L3-012] L3 分=8
+  [comm-L3-013] L3 分=9
+  [comm-L3-014] L3 分=8
+  [comm-L3-015] L3 分=4
+  [comm-L3-016] L3 分=8
+  [comm-L3-017] L3 分=9
+  [comm-L3-018] L3 分=8
+  [comm-L3-019] L3 分=8
+  [comm-L3-020] L3 分=7
+  [comm-L4-006] L4 分=8
+  [comm-L4-007] L4 分=9
+
+=== Qwen/Qwen3-8B [with_kb] ===
+  [comm-L3-001] L3 分=4
+  [comm-L3-002] L3 分=8
+  [comm-L3-003] L3 分=7
+  [comm-L3-004] L3 分=9
+  [comm-L3-005] L3 分=8
+  [comm-L3-006] L3 分=10
+  [comm-L3-007] L3 分=8
+  [comm-L3-008] L3 分=8
+  [comm-L3-009] L3 分=8
+  [comm-L3-010] L3 分=9
+  [comm-L4-001] L4 分=9
+  [comm-L4-002] L4 分=8
+  [comm-L4-003] L4 分=9
+  [comm-L4-004] L4 分=8
+  [comm-L4-005] L4 分=9
+  [comm-L3-011] L3 分=9
+  [comm-L3-012] L3 分=8
+  [comm-L3-013] L3 分=8
+  [comm-L3-014] L3 分=8
+  [comm-L3-015] L3 分=9
+  [comm-L3-016] L3 分=7
+  [comm-L3-017] L3 分=9
+  [comm-L3-018] L3 分=8
+  [comm-L3-019] L3 分=9
+  [comm-L3-020] L3 分=8
+  [comm-L4-006] L4 分=8
+  [comm-L4-007] L4 分=8
+
+原始结果已保存: D:\Bai chenghongyi Information\各类比赛以及活动\软件开发_qq_ai助手\benchmark\results\raw_20260813_193555.jsonl
+汇总已保存: D:\Bai chenghongyi Information\各类比赛以及活动\软件开发_qq_ai助手\benchmark\results\summary_20260813_193555.json
+
+============================================================
+评测汇总（平均分，满分 10）
+============================================================
+
+Qwen/Qwen2.5-7B-Instruct
+  裸跑:     4.85
+  +知识库:  5.3  (增益 +0.45)
+    L3: 裸跑 4.47 → +KB 4.9  (+0.43)
+    L4: 裸跑 5.86 → +KB 6.43  (+0.57)
+
+Qwen/Qwen3-8B
+  裸跑:     7.89
+  +知识库:  8.19  (增益 +0.30)
+    L3: 裸跑 7.75 → +KB 8.1  (+0.35)
+    L4: 裸跑 8.29 → +KB 8.43  (+0.14)
+
+deepseek-chat
+  裸跑:     8.41
+  +知识库:  8.59  (增益 +0.18)
+    L3: 裸跑 8.45 → +KB 8.5  (+0.05)
+    L4: 裸跑 8.29 → +KB 8.86  (+0.57)

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 v2 · 完整实验史报告</title>
+<style>
+:root {
+  --bg: #0a0e1a; --card: #12172a; --card2: #0e1322;
+  --line: rgba(255,255,255,0.08); --txt: #e2e8f0; --dim: #94a3b8; --mute: #64748b;
+  --purple: #8b5cf6; --purple2: #a78bfa; --teal: #34d3b0; --amber: #fbbf24;
+  --blue: #4c8dff; --pink: #ff6b9d; --red: #f87171; --gray: #94a3b8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:radial-gradient(1200px 600px at 20% -10%, #1a1040 0%, var(--bg) 55%);
+  color:var(--txt); line-height:1.65; padding:40px 20px 90px;
+}
+.wrap { max-width:900px; margin:0 auto; }
+.hero { border:1px solid rgba(139,92,246,0.3); border-radius:20px; padding:36px 32px;
+  background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(10,14,26,0.3)); margin-bottom:24px; }
+.hero .tag { display:inline-block; font-size:12px; color:var(--purple2);
+  background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3);
+  padding:3px 12px; border-radius:20px; margin-bottom:14px; }
+.hero h1 { font-size:26px; font-weight:800; margin-bottom:8px; }
+.hero p { color:var(--dim); font-size:14px; }
+.section { margin-bottom:32px; }
+.section-title { font-size:17px; font-weight:700; margin-bottom:14px;
+  display:flex; align-items:center; gap:8px; }
+.section-title::before { content:""; width:4px; height:17px; border-radius:2px; background:var(--purple); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:20px 22px; margin-bottom:14px; }
+/* 决策 */
+.decision { border:1px solid rgba(52,211,176,0.35);
+  background:linear-gradient(135deg,rgba(52,211,176,0.1),rgba(10,14,26,0.3));
+  border-radius:16px; padding:22px 24px; margin-bottom:16px; }
+.decision .d-title { font-size:18px; font-weight:800; color:var(--teal); margin-bottom:6px; }
+.decision .d-sub { font-size:13px; color:var(--dim); }
+/* 时间线 */
+.timeline { position:relative; padding-left:28px; }
+.timeline::before { content:""; position:absolute; left:8px; top:6px; bottom:6px;
+  width:2px; background:linear-gradient(var(--purple), var(--teal)); opacity:0.4; }
+.tl-phase { position:relative; margin-bottom:26px; }
+.tl-phase::before { content:""; position:absolute; left:-24px; top:8px; width:12px; height:12px;
+  border-radius:50%; background:var(--purple); border:2px solid var(--bg); box-shadow:0 0 0 3px rgba(139,92,246,0.3); }
+.tl-phase.done::before { background:var(--teal); box-shadow:0 0 0 3px rgba(52,211,176,0.3); }
+.tl-head { font-size:15px; font-weight:700; margin-bottom:8px; }
+.tl-head .ph { color:var(--purple2); font-size:12px; margin-left:8px; font-weight:600; }
+.tl-items { display:flex; flex-direction:column; gap:8px; }
+.tl-item { background:var(--card2); border:1px solid var(--line); border-radius:10px;
+  padding:10px 14px; font-size:12.5px; color:var(--dim); }
+.tl-item b { color:var(--txt); }
+.tl-item .ok { color:var(--teal); font-weight:700; }
+.tl-item .fail { color:var(--red); font-weight:700; }
+.tl-item .warn { color:var(--amber); font-weight:700; }
+/* 表格 */
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+th,td { padding:9px 10px; text-align:center; border-bottom:1px solid var(--line); }
+th { color:var(--mute); font-weight:600; font-size:11.5px; }
+td.hl { color:var(--teal); font-weight:800; }
+tr.win td { background:rgba(52,211,176,0.06); }
+td.pos { color:var(--teal); font-weight:700; }
+td.neg { color:var(--red); font-weight:700; }
+/* 柱状图 */
+.bar-row { margin-bottom:16px; }
+.bar-label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+.bar-label .name { font-size:12.5px; font-weight:600; }
+.bar-label .val { font-size:15px; font-weight:800; }
+.bar-track { height:24px; background:rgba(255,255,255,0.04); border-radius:6px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:6px; display:flex; align-items:center;
+  padding-left:10px; font-size:11px; color:#fff; font-weight:700; }
+.note { font-size:12px; color:var(--mute); margin-top:12px; line-height:1.7; }
+.highlight { color:var(--teal); font-weight:700; }
+.insight { border-left:3px solid var(--amber); background:rgba(251,191,36,0.05);
+  border-radius:0 10px 10px 0; padding:12px 16px; font-size:13px; color:var(--dim); margin-bottom:10px; }
+.insight b { color:var(--amber); }
+/* bug 清单 */
+.bug { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px dashed var(--line); font-size:12.5px; color:var(--dim); }
+.bug:last-child { border-bottom:none; }
+.bug .b-tag { flex-shrink:0; font-size:10px; padding:2px 8px; border-radius:6px; font-weight:700; margin-top:2px; }
+.bug .b-tag.bug { background:rgba(248,113,113,0.15); color:var(--red); }
+.bug .b-tag.fix { background:rgba(52,211,176,0.15); color:var(--teal); }
+@media (max-width:640px) { body { padding:20px 12px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="tag">知识库 v2 · 完整实验史</span>
+    <h1>从 0 到 74 节点：完整实验记录</h1>
+    <p>记录了知识库搭建、模型评测、检索方案研究全过程的每一次尝试、每一轮数据、每一个踩过的坑。</p>
+  </div>
+
+  <!-- 最终决策 -->
+  <div class="decision">
+    <div class="d-title">✓ 最终方案：top-3 初筛 + links 扩展 + LLM 精挑</div>
+    <div class="d-sub">完整版 benchmark（116 题）召回 <b style="color:#fff">79.1%</b>，比原方案 top-10 高 <b>+4.8 点</b>，候选仅 9.8 个（更省更准）。</div>
+  </div>
+
+  <!-- 时间线 -->
+  <div class="section">
+    <div class="section-title">完整时间线</div>
+    <div class="timeline">
+      <div class="tl-phase done">
+        <div class="tl-head">阶段一 · 知识库搭建<span class="ph">8.13 - 8.15</span></div>
+        <div class="tl-items">
+          <div class="tl-item"><span class="fail">✗ v1 全量注入</span>：3.4 万字符全塞进 prompt → <b>超限失败</b>，教训「知识库不能全量注入」</div>
+          <div class="tl-item"><span class="ok">✓ v2 段落级检索</span>：19 节点目录，检索式注入，第一次跑通</div>
+          <div class="tl-item"><span class="ok">✓ 建树扩充</span>：移动通信树 +18、随机信号树 +12、服务器知识库整合（信息论/高频/信号检测/电磁场/计网）</div>
+          <div class="tl-item"><span class="ok">✓ 结论式重构</span>：21 个 core 节点重写「一句话本质 + 关键结论」，leaf 加一句话本质</div>
+          <div class="tl-item"><span class="ok">✓ 权威节点合并</span>：OFDM / 多址 / 均衡 合成跨树权威节点（选错树也收敛）</div>
+          <div class="tl-item"><b>→ 最终 74 节点 / 27 思维链 / 260 连接 / 六棵树</b></div>
+        </div>
+      </div>
+      <div class="tl-phase done">
+        <div class="tl-head">阶段二 · 模型评测<span class="ph">8.14 - 8.15</span></div>
+        <div class="tl-items">
+          <div class="tl-item"><span class="ok">✓ v2 单科</span>（19 节点 27 题）：7B +0.45、8B +0.30、DeepSeek +0.18，全正增益</div>
+          <div class="tl-item"><span class="fail">✗ v3 跨学科</span>（36 节点 26 题）：7B -0.16、8B -0.08 <b>负增益</b> → 揪出 <b>max_tokens=80 截断 bug</b></div>
+          <div class="tl-item"><span class="ok">✓ v4 六模型全梯度</span>（方案 A）：全正增益，14B +0.31、DeepSeek +0.33 双峰</div>
+          <div class="tl-item"><span class="ok">✓ 最终策略</span>（程序初筛+精挑，35 题）：小模型被拯救，8B/14B +0.57</div>
+          <div class="tl-item"><span class="ok">✓ 反直觉难题</span>（15 题 + 严格裁判）：DeepSeek +0.50、14B +1.27，难题增益翻倍</div>
+        </div>
+      </div>
+      <div class="tl-phase done">
+        <div class="tl-head">阶段三 · 检索方案研究<span class="ph">8.15 - 8.16</span></div>
+        <div class="tl-items">
+          <div class="tl-item"><span class="warn">△ 方案 A</span>：模型自主选节点 → 弱模型选不准（88%）</div>
+          <div class="tl-item"><span class="warn">△ 方案 B</span>：纯 TF-IDF → 召回 82%，混入 hub 垃圾</div>
+          <div class="tl-item"><span class="ok">✓ 方案 C</span>：程序筛 top-10 + 模型精挑 → 89-93%，框架定型</div>
+          <div class="tl-item"><span class="warn">△ D/E/F</span>：排除 hub + links 扩展 → 发现精挑有 ±1-2 点噪声</div>
+          <div class="tl-item"><span class="ok">✓ links 价值发现</span>：top-K 越窄，links 救回的正确答案越多（top-2 增量 +18 点）</div>
+          <div class="tl-item"><span class="ok">✓ 完整版 benchmark</span>（116 题）：top-3+links 79.1% 胜出，选定最终方案</div>
+        </div>
+      </div>
+      <div class="tl-phase done">
+        <div class="tl-head">阶段四 · 落地<span class="ph">8.16</span></div>
+        <div class="tl-items">
+          <div class="tl-item"><span class="ok">✓ 服务器部署</span>：node_retriever（TF-IDF 初筛 + 阈值 0.15 区分闲聊 + 注入 content/cot/links）</div>
+          <div class="tl-item"><span class="ok">✓ 8080 可视化</span>：六棵树树形目录 + 3D 知识图谱</div>
+          <div class="tl-item"><b>→ 知识库正式服务洛洛（QQ 机器人）</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模型评测完整数据 -->
+  <div class="section">
+    <div class="section-title">模型评测 · 五轮实验（裸跑 → +知识库 增益）</div>
+    <div class="card">
+      <table>
+        <tr><th>轮次</th><th>题库</th><th>检索方案</th><th>模型</th><th>增益</th></tr>
+        <tr><td>v2 单科</td><td>19 节点 / 27 题</td><td>检索式注入</td><td>7B / 8B / DeepSeek</td><td class="pos">+0.45 / +0.30 / +0.18</td></tr>
+        <tr><td>v3 跨学科</td><td>36 节点 / 26 题</td><td>模型自主选</td><td>7B / 8B / DeepSeek</td><td class="neg">-0.16 / -0.08 / +0.34</td></tr>
+        <tr><td>v4 六模型</td><td>26 题</td><td>方案 A</td><td>8B~GLM-32B / DeepSeek</td><td class="pos">+0.11~+0.33</td></tr>
+        <tr class="win"><td>最终策略</td><td>35 题</td><td>程序初筛+精挑</td><td>8B / 14B / 32B / GLM-5.2 / DS</td><td class="pos">+0.57 / +0.57 / +0.17 / +0.40 / +0.23</td></tr>
+        <tr><td>反直觉难题</td><td>15 题</td><td>程序初筛+精挑</td><td>DeepSeek / 14B / 32B</td><td class="pos">+0.50 / +1.27 / +0.40</td></tr>
+      </table>
+      <div class="note">
+        <b style="color:#fff">关键转折</b>：v3 的负增益是 <b>max_tokens=80 截断 bug</b> 的假象（Qwen7B 输出 <code>["dsp-spectrum"</code> 缺结尾被截断）。
+        修复后全正增益；换「程序初筛+精挑」后，小模型增益从 +0.11 提到 +0.57（5 倍）——<b>选节点不再依赖模型能力，弱模型被拯救</b>。
+      </div>
+    </div>
+  </div>
+
+  <!-- 检索方案研究 -->
+  <div class="section">
+    <div class="section-title">检索方案研究 · 从 A 到最终</div>
+    <div class="card">
+      <table>
+        <tr><th>方案</th><th>机制</th><th>选节点召回</th><th>结论</th></tr>
+        <tr><td>B 纯 TF-IDF</td><td>程序 top-3</td><td>82%</td><td class="neg">混入 hub，不够</td></tr>
+        <tr><td>A 模型自主</td><td>模型看 74 目录</td><td>88%</td><td class="warn">弱模型选不准</td></tr>
+        <tr><td>C 程序筛+精挑</td><td>top-10 + 模型挑</td><td>89-93%</td><td class="pos">框架定型</td></tr>
+        <tr><td>E top-10 排除 hub</td><td>程序+精挑</td><td>91%</td><td class="pos">稳定</td></tr>
+        <tr class="win"><td>top-3 + links</td><td>top-3 + links 扩展 + 精挑</td><td>79.1%（116 题）</td><td class="hl">✓ 最终选定</td></tr>
+      </table>
+      <div class="note">
+        注意：召回率口径不同（前几个是 50 题干净题库，最后是 116 题完整题库）。完整题库更难，所以绝对数字下降，
+        但 <b>相对优势</b> 才是关键：top-3+links 比同题库的方案 B 高 <span class="highlight">+4.8 点</span>。
+      </div>
+    </div>
+  </div>
+
+  <!-- links 研究 -->
+  <div class="section">
+    <div class="section-title">links（Wiki 连接）研究 · 三段式结论</div>
+    <div class="insight"><b>第一段（误判）</b>：选节点时 links 扩展零收益（37 补进 0 个 expected）→ 一度认为 links「没用」</div>
+    <div class="insight"><b>第二段（探索）</b>：注入时 links 全文扩展 +0.2 分但要 3 倍 token，摘要扩展 -0.2 分 → 都不划算</div>
+    <div class="insight"><b>第三段（真相）</b>：<b>links 的价值取决于 top-K 宽度和题库难度</b>。top-K 收窄到 3，links 救回「排名靠后但语义相关」的正确答案，完整题库上 +5.8 点</div>
+    <div class="card">
+      <div style="font-size:12.5px; color:var(--dim); margin-bottom:10px"><b style="color:#fff">top-K 收窄扫描（links 增量）</b></div>
+      <div class="bar-row"><div class="bar-label"><span class="name">top-2 + links</span><span class="val" style="color:#34d3b0">+18 点</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:90%; background:#34d3b0">78% → 96%</div></div></div>
+      <div class="bar-row"><div class="bar-label"><span class="name">top-3 + links</span><span class="val" style="color:#34d3b0">+11 点</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%; background:#34d3b0">86% → 97%</div></div></div>
+      <div class="bar-row"><div class="bar-label"><span class="name">top-4 + links</span><span class="val" style="color:#a78bfa">+8 点</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:55%; background:#8b5cf6">91% → 99%</div></div></div>
+      <div class="bar-row"><div class="bar-label"><span class="name">top-6 + links</span><span class="val" style="color:#a78bfa">+6 点</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:45%; background:#8b5cf6">94% → 100%</div></div></div>
+      <div class="note">规律：<b>top-K 越窄，links 增量越大</b>——因为越窄漏掉的正确答案越多，且这些漏掉的恰好是 links 邻居。</div>
+    </div>
+  </div>
+
+  <!-- Bug 与踩坑 -->
+  <div class="section">
+    <div class="section-title">Bug 与踩坑清单（都是真实踩过的）</div>
+    <div class="card">
+      <div class="bug"><span class="b-tag fix">已修</span><span><b>max_tokens=80 截断</b>：Qwen7B 选节点输出 <code>["dsp-spectrum"</code> 缺结尾，正则解析失败→返回空→知识库没注入。改为 200 + 解析兜底。</span></div>
+      <div class="bug"><span class="b-tag bug">模型</span><span><b>Qwen7B 自我追加 user 回合</b>：答案写到一半自己模拟追问，4 条答案中断。淘汰 7B 换 9B。</span></div>
+      <div class="bug"><span class="b-tag fix">已修</span><span><b>题库 expected 混入 hub</b>：5 处（comm-analog 等分类文件夹被标成正确答案），让「排除 hub」方案被不公平扣分。</span></div>
+      <div class="bug"><span class="b-tag fix">已修</span><span><b>enable_thinking 默认空</b>：Qwen3.5 系列默认 thinking 模式，content 为空，必须 enable_thinking=False，正则从 qwen3-\d 改 qwen3。</span></div>
+      <div class="bug"><span class="b-tag warn">注意</span><span><b>精挑有随机噪声</b>：DeepSeek 即使 temperature=0 也有 ±1-2 点波动，单次测量不稳健，需重复取平均。</span></div>
+      <div class="bug"><span class="b-tag warn">注意</span><span><b>硅基流动限流</b>：部分模型 Connection error，导致反直觉题那轮 8B/GLM 数据不可用。</span></div>
+      <div class="bug"><span class="b-tag fix">已修</span><span><b>rm 被 safe-delete 拦截</b>：环境把 rm 包装成回收站，对中文路径失败导致命令中断。</span></div>
+    </div>
+  </div>
+
+  <!-- 核心洞察 -->
+  <div class="section">
+    <div class="section-title">核心洞察（经验沉淀）</div>
+    <div class="insight"><b>内容质量 > 结构复杂度</b>：结论式写法让 TF-IDF 已覆盖 90%+，是最大的隐性功臣</div>
+    <div class="insight"><b>程序初筛 + 模型精挑</b>：程序扛大目录（不依赖模型能力），模型保语义精挑，两者分工</div>
+    <div class="insight"><b>links 的价值是「有条件」的</b>：在关键词检索开始漏的场景（难题、老题、大规模库）才凸显</div>
+    <div class="insight"><b>增益 = 可补空间 × 吸收能力</b>：小模型增益大（+0.57）因为裸跑分低、可补空间大</div>
+    <div class="insight"><b>题目难度决定增益天花板</b>：难题上增益翻倍（+1.27），旧题天花板效应压缩增益</div>
+  </div>
+
+  <div class="note" style="text-align:center; margin-top:30px">
+    知识库 v2 完整实验史 · 从 v1 全量注入失败到 top-3+links 落地 · 74 节点六棵树
+  </div>
+</div>
+</body>
+</html>

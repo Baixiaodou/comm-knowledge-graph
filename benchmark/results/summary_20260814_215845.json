@@ -1,0 +1,44 @@
+{
+  "deepseek-chat|bare": {
+    "model": "deepseek-chat",
+    "mode": "bare",
+    "all": 8.31,
+    "L3": 8.33,
+    "L4": 8.29
+  },
+  "deepseek-chat|with_kb": {
+    "model": "deepseek-chat",
+    "mode": "with_kb",
+    "all": 8.65,
+    "L3": 8.83,
+    "L4": 8.5
+  },
+  "Qwen/Qwen2.5-7B-Instruct|bare": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "mode": "bare",
+    "all": 5.54,
+    "L3": 4.92,
+    "L4": 6.07
+  },
+  "Qwen/Qwen2.5-7B-Instruct|with_kb": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "mode": "with_kb",
+    "all": 5.38,
+    "L3": 4.58,
+    "L4": 6.07
+  },
+  "Qwen/Qwen3-8B|bare": {
+    "model": "Qwen/Qwen3-8B",
+    "mode": "bare",
+    "all": 7.81,
+    "L3": 8.0,
+    "L4": 7.64
+  },
+  "Qwen/Qwen3-8B|with_kb": {
+    "model": "Qwen/Qwen3-8B",
+    "mode": "with_kb",
+    "all": 7.73,
+    "L3": 7.67,
+    "L4": 7.79
+  }
+}

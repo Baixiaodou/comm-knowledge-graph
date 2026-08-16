@@ -1,0 +1,50 @@
+{
+  "deepseek-chat|bare": {
+    "model": "deepseek-chat",
+    "mode": "bare",
+    "all": 7.67,
+    "L4": 7.67
+  },
+  "deepseek-chat|with_kb": {
+    "model": "deepseek-chat",
+    "mode": "with_kb",
+    "all": 8.17,
+    "L4": 8.17
+  },
+  "Qwen/Qwen3-8B|with_kb": {
+    "model": "Qwen/Qwen3-8B",
+    "mode": "with_kb",
+    "all": 7.5,
+    "L4": 7.5
+  },
+  "Qwen/Qwen3-14B|bare": {
+    "model": "Qwen/Qwen3-14B",
+    "mode": "bare",
+    "all": 6.87,
+    "L4": 6.87
+  },
+  "Qwen/Qwen3-14B|with_kb": {
+    "model": "Qwen/Qwen3-14B",
+    "mode": "with_kb",
+    "all": 8.13,
+    "L4": 8.13
+  },
+  "Qwen/Qwen3-32B|bare": {
+    "model": "Qwen/Qwen3-32B",
+    "mode": "bare",
+    "all": 7.6,
+    "L4": 7.6
+  },
+  "Qwen/Qwen3-32B|with_kb": {
+    "model": "Qwen/Qwen3-32B",
+    "mode": "with_kb",
+    "all": 8.0,
+    "L4": 8.0
+  },
+  "zai-org/GLM-5.2|with_kb": {
+    "model": "zai-org/GLM-5.2",
+    "mode": "with_kb",
+    "all": 7.88,
+    "L4": 7.88
+  }
+}

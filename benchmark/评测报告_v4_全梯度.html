@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库评测报告 v4 · 六模型全梯度</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #e6edf3; --dim: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --amber: #d29922; --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; padding: 32px 20px; line-height: 1.7; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 24px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 28px 0 12px; color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 9px 12px; text-align: center; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); font-weight: 500; background: rgba(255,255,255,0.02); }
+  tr:last-child td { border-bottom: none; }
+  .gain-pos { color: var(--green); font-weight: 600; }
+  .gain-neg { color: var(--red); font-weight: 600; }
+  .peak { background: rgba(210,153,34,0.12); }
+  .hl { color: var(--amber); font-weight: 600; }
+  .insight { border-left: 3px solid var(--accent); padding: 12px 16px; background: rgba(88,166,255,0.06); border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 14px; }
+  .conclusion { border-left: 3px solid var(--green); padding: 12px 16px; background: rgba(63,185,80,0.08); border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 14px; }
+  .chart-wrap { position: relative; height: 320px; margin: 8px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 8px 0 4px; font-size: 12px; color: var(--dim); }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .footer { color: var(--dim); font-size: 12px; text-align: center; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>知识库评测报告 v4 · 六模型全梯度</h1>
+  <div class="sub">26 题（L3 单科 12 + L4 跨学科 14）· qwen-max 裁判 · 检索式注入（方案 A）</div>
+
+  <div class="conclusion">
+    <strong>核心结论：修复选节点 bug 后，知识库对全部 6 个模型都是正增益。</strong>
+    之前 v3 的「小模型负增益」是脚本 bug（max_tokens 截断选节点输出）的假象，不是知识库有害。
+  </div>
+
+  <h2>一、六模型总览（裸跑 vs +知识库）</h2>
+  <div class="card">
+    <table>
+      <tr><th>模型</th><th>规模</th><th>裸跑</th><th>+知识库</th><th>增益</th><th>L3 单科</th><th>L4 跨学科</th></tr>
+      <tr><td>Qwen3-8B</td><td>8B</td><td>7.81</td><td>7.92</td><td class="gain-pos">+0.11</td><td class="gain-neg">-0.16</td><td class="gain-pos">+0.36</td></tr>
+      <tr><td>Qwen3.5-9B</td><td>9B</td><td>8.04</td><td>8.19</td><td class="gain-pos">+0.15</td><td class="gain-pos">+0.09</td><td class="gain-pos">+0.21</td></tr>
+      <tr class="peak"><td>Qwen3-14B</td><td>14B</td><td>7.77</td><td>8.08</td><td class="gain-pos"><strong>+0.31</strong></td><td class="gain-pos"><strong>+0.58</strong></td><td class="gain-pos">+0.07</td></tr>
+      <tr><td>Qwen3-32B</td><td>32B</td><td>7.92</td><td>8.04</td><td class="gain-pos">+0.12</td><td class="gain-pos">+0.09</td><td class="gain-pos">+0.14</td></tr>
+      <tr><td>GLM-4-32B（智谱）</td><td>32B</td><td>7.96</td><td>8.04</td><td class="gain-pos">+0.08</td><td class="gain-pos">+0.17</td><td>+0.00</td></tr>
+      <tr class="peak"><td>DeepSeek</td><td>大模型</td><td>8.36</td><td>8.69</td><td class="gain-pos"><strong>+0.33</strong></td><td class="gain-pos">+0.42</td><td class="gain-pos">+0.27</td></tr>
+    </table>
+  </div>
+
+  <h2>二、知识库增益 vs 模型规模</h2>
+  <div class="legend">
+    <span><span class="dot" style="background:#378add;"></span>普通档位</span>
+    <span><span class="dot" style="background:#ef9f27;"></span>增益峰值</span>
+  </div>
+  <div class="chart-wrap"><canvas id="c1" role="img" aria-label="知识库增益随模型规模变化的柱状图"></canvas></div>
+
+  <h2>三、L3 单科 vs L4 跨学科的分化</h2>
+  <div class="chart-wrap"><canvas id="c2" role="img" aria-label="各模型L3与L4增益对比分组柱状图"></canvas></div>
+
+  <h2>四、关键发现</h2>
+  <div class="insight"><strong>① 全正增益，推翻 v3 的「负增益」结论。</strong> v3 的小模型负增益是 <code>max_tokens=80</code> 截断选节点输出导致的 bug。修复后，检索式注入对所有模型（8B→DeepSeek）都是净正面，重新验证了「检索式 &gt; 全量式」的结论。</div>
+  <div class="insight"><strong>② 增益不是单调随规模增长，而是双峰。</strong> <span class="hl">14B（+0.31）</span> 和 <span class="hl">DeepSeek（+0.33）</span> 是两个峰值，中间 32B 反而回落（+0.12）。说明「标志点」不是简单的「越大越好」。</div>
+  <div class="insight"><strong>③ 14B 是「单科题增益」的最佳规模（L3 +0.58）。</strong> 14B 恰好卡在「自身知识够用但还不够全」的区间——知识库能补上它漏掉的单科细节，增益最猛。32B 自身知识更全，可补空间反而变小。</div>
+  <div class="insight"><strong>④ 跨学科题（L4）上，8B 增益最大（+0.36）。</strong> 8B 裸跑跨学科题最弱（7.57），知识库帮它跨树取知识的效果最明显。但它在 L3 单科题上是唯一负增益（-0.16）——8B 自身单科知识够，注入反而干扰。</div>
+  <div class="insight"><strong>⑤ 别家对照：智谱 GLM-4-32B（+0.08）略低于同规模的 Qwen3-32B（+0.12）。</strong> 差距很小，说明知识库增益主要看「规模/能力」而非「厂商」。</div>
+
+  <h2>五、回答「标志点在哪」</h2>
+  <div class="conclusion">
+    <strong>不存在「从负到正」的拐点</strong>（修复 bug 后全正）。但有意义的两个点：<br>
+    · <span class="hl">14B</span> —— 「单科题增益」的峰值（L3 +0.58），是「知识库补细节」性价比最高的规模<br>
+    · <span class="hl">DeepSeek</span> —— 「总增益」的峰值（+0.33），跨学科 + 单科都稳定受益<br>
+    换句话说：<strong>知识库对「能用得动它的模型」都有正面作用，14B 和强模型收益最大。</strong>
+  </div>
+
+  <div class="footer">评测工具 tools/kb_benchmark.py · 题库 benchmark/questions_v3.json · 数据 raw_20260815_002050.jsonl</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const dark = { ticks: { color: '#8b949e', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.07)' } };
+
+new Chart(document.getElementById('c1'), {
+  type: 'bar',
+  data: {
+    labels: ['8B\nQwen3', '9B\nQwen3.5', '14B\nQwen3', '32B\nQwen3', '32B\nGLM-4', '大模型\nDeepSeek'],
+    datasets: [{
+      label: '增益',
+      data: [0.11, 0.15, 0.31, 0.12, 0.08, 0.33],
+      backgroundColor: ['#378add', '#378add', '#ef9f27', '#378add', '#378add', '#ef9f27'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' +' + c.parsed.y.toFixed(2) } } },
+    scales: { x: { ...dark, grid: { display: false }, ticks: { color: '#8b949e', autoSkip: false, maxRotation: 0, font: { size: 11 } } }, y: { beginAtZero: true, suggestedMax: 0.4, ...dark, ticks: { color: '#8b949e', callback: v => '+' + v.toFixed(2) } } }
+  }
+});
+
+new Chart(document.getElementById('c2'), {
+  type: 'bar',
+  data: {
+    labels: ['8B', '9B', '14B', '32B', 'GLM-32B', 'DeepSeek'],
+    datasets: [
+      { label: 'L3 单科', data: [-0.16, 0.09, 0.58, 0.09, 0.17, 0.42], backgroundColor: '#58a6ff', borderRadius: 4 },
+      { label: 'L4 跨学科', data: [0.36, 0.21, 0.07, 0.14, 0.00, 0.27], backgroundColor: '#3fb950', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, labels: { color: '#8b949e', boxWidth: 12, padding: 16 } },
+      tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + (c.parsed.y >= 0 ? '+' : '') + c.parsed.y.toFixed(2) } }
+    },
+    scales: { x: { ...dark, grid: { display: false }, ticks: { color: '#8b949e', autoSkip: false, maxRotation: 0, font: { size: 11 } } }, y: { ...dark, ticks: { color: '#8b949e', callback: v => (v >= 0 ? '+' : '') + v.toFixed(2) } } }
+  }
+});
+</script>
+</body>
+</html>

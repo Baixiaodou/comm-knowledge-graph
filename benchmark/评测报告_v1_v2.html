@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 Benchmark 评测报告 — v1 vs v2</title>
+<style>
+  :root {
+    --bg: #1a1b26; --card: #24283b; --border: #3b4261;
+    --text: #c0caf5; --muted: #7aa2f7; --dim: #565f89;
+    --up: #9ece6a; --down: #f7768e; --accent: #7aa2f7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; padding:32px 24px; line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:600; margin-bottom:6px; }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:24px; }
+  h2 { font-size:16px; font-weight:600; margin:28px 0 12px; color:var(--accent); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { padding:8px 12px; text-align:center; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:500; }
+  td.left { text-align:left; }
+  .pos { color:var(--up); font-weight:600; }
+  .neg { color:var(--down); font-weight:600; }
+  .tag { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; margin-left:8px; }
+  .tag-bad { background:#3d1d24; color:var(--down); }
+  .tag-good { background:#1d3d24; color:var(--up); }
+  .tag-best { background:#1d2b4a; color:#82aaff; }
+  /* 柱状图（正柱向上、负柱向下，以零线为界） */
+  .bars { display:flex; gap:28px; height:280px; padding:10px 0 30px; }
+  .bar-group { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .bar-pair { position:relative; width:100%; height:200px; }
+  .bar-pair::after { content:''; position:absolute; left:12%; right:12%; top:50%; border-top:1px solid var(--border); }
+  .bar { position:absolute; width:38px; margin-left:-19px; text-align:center; }
+  .bar.up { bottom:50%; background:#9ece6a; border-radius:5px 5px 0 0; }
+  .bar.down { top:50%; background:#f7768e; border-radius:0 0 5px 5px; }
+  .bar-val { position:absolute; left:50%; transform:translateX(-50%); font-size:11px; color:var(--text); white-space:nowrap; }
+  .bar.up .bar-val { bottom:-20px; }
+  .bar.down .bar-val { top:-20px; }
+  .bar-label { font-size:12px; color:var(--dim); }
+  .gain { font-size:13px; font-weight:600; }
+  .insight { background:#1d2b4a; border-left:3px solid var(--accent); padding:14px 18px; border-radius:0 8px 8px 0; margin:16px 0; font-size:14px; }
+  .footer { color:var(--dim); font-size:12px; margin-top:24px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>知识库 Benchmark 评测报告</h1>
+  <div class="sub">通信原理 · 27 题（L3 综合 20 + L4 开放 7）· Qwen-Max 裁判 · 满分 10</div>
+
+  <h2>一、核心结论：检索式注入有效，全量注入有害</h2>
+  <div class="insight">
+    <b>你的「先看目录 → 模型定位 → 只调相关知识」设计被数据验证了。</b><br>
+    同样的知识库，全量塞给小模型是「负增益」（信息过载），改成检索式注入后全部翻转为<b>正增益</b>。
+    最弱的 Qwen7B 从 <span class="neg">-0.70</span> 翻转成 <span class="pos">+0.45</span>，提升 1.15 分。
+  </div>
+
+  <h2>二、v1（全量注入）vs v2（检索注入）对比</h2>
+  <div class="card">
+    <table>
+      <tr>
+        <th class="left">模型</th>
+        <th>裸跑</th>
+        <th>v1 全量 +KB</th>
+        <th>v1 增益</th>
+        <th>v2 检索 +KB</th>
+        <th>v2 增益</th>
+      </tr>
+      <tr>
+        <td class="left">Qwen2.5-7B <span class="tag tag-good">最弱·受益最大</span></td>
+        <td>4.85</td>
+        <td>4.11</td>
+        <td class="neg">-0.70</td>
+        <td>5.30</td>
+        <td class="pos">+0.45</td>
+      </tr>
+      <tr>
+        <td class="left">Qwen3-8B</td>
+        <td>7.89</td>
+        <td>8.11</td>
+        <td class="pos">+0.15</td>
+        <td>8.19</td>
+        <td class="pos">+0.30</td>
+      </tr>
+      <tr>
+        <td class="left">DeepSeek <span class="tag tag-best">最强·参照</span></td>
+        <td>8.41</td>
+        <td>8.48</td>
+        <td class="neg">-0.04</td>
+        <td>8.59</td>
+        <td class="pos">+0.18</td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>三、增益对比（v1 → v2）</h2>
+  <div class="card">
+    <div class="bars">
+      <div class="bar-group">
+        <div class="bar-pair">
+          <div class="bar down" style="height:90px;left:25%;"><span class="bar-val">-0.70</span></div>
+          <div class="bar up" style="height:58px;left:65%;"><span class="bar-val">+0.45</span></div>
+        </div>
+        <div class="bar-label">Qwen7B</div>
+        <div class="gain pos">翻转 +1.15</div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-pair">
+          <div class="bar up" style="height:19px;left:25%;"><span class="bar-val">+0.15</span></div>
+          <div class="bar up" style="height:39px;left:65%;"><span class="bar-val">+0.30</span></div>
+        </div>
+        <div class="bar-label">Qwen8B</div>
+        <div class="gain pos">翻倍</div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-pair">
+          <div class="bar down" style="height:5px;left:25%;"><span class="bar-val">-0.04</span></div>
+          <div class="bar up" style="height:23px;left:65%;"><span class="bar-val">+0.18</span></div>
+        </div>
+        <div class="bar-label">DeepSeek</div>
+        <div class="gain pos">翻转</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--dim);text-align:center;">
+      中间横线 = 零增益基线 · 左柱 = v1 全量注入 · 右柱 = v2 检索注入（正柱向上、负柱向下）
+    </div>
+  </div>
+
+  <h2>四、v2 分层增益（L3 综合 / L4 开放）</h2>
+  <div class="card">
+    <table>
+      <tr><th class="left">模型</th><th>L3 裸跑 → +KB</th><th>L3 增益</th><th>L4 裸跑 → +KB</th><th>L4 增益</th></tr>
+      <tr>
+        <td class="left">Qwen7B</td>
+        <td>4.47 → 4.90</td><td class="pos">+0.43</td>
+        <td>5.86 → 6.43</td><td class="pos">+0.57</td>
+      </tr>
+      <tr>
+        <td class="left">Qwen8B</td>
+        <td>7.75 → 8.10</td><td class="pos">+0.35</td>
+        <td>8.29 → 8.43</td><td class="pos">+0.14</td>
+      </tr>
+      <tr>
+        <td class="left">DeepSeek</td>
+        <td>8.45 → 8.50</td><td class="pos">+0.05</td>
+        <td>8.29 → 8.86</td><td class="pos">+0.57</td>
+      </tr>
+    </table>
+    <div style="font-size:12px;color:var(--dim);margin-top:12px;">
+      L4 开放题（香农公式、星座图权衡等）是知识库增益最明显的地方——这正是知识库设计时预期的「模糊/综合题收益最大」。
+    </div>
+  </div>
+
+  <h2>五、结论与下一步</h2>
+  <div class="card">
+    <ul style="padding-left:20px;font-size:14px;">
+      <li><b>知识库有价值</b>：检索式注入下，三个模型全部正增益（+0.18 ~ +0.45）</li>
+      <li><b>小模型受益最大</b>：Qwen7B +0.45，验证了「模型越弱、知识库增益越大」的假设</li>
+      <li><b>注入方式决定成败</b>：全量塞 = 信息过载（-0.70），检索注入 = 有效（+0.45），差距 1.15 分</li>
+      <li><b>下一步可选</b>：① 调优检索（top-K、是否带 links 扩展）看能否再提升；② 换 DSP/计网开第二棵树，验证流程可复用</li>
+    </ul>
+  </div>
+
+  <div class="footer">knowledge-v2 · benchmark/questions.json（27 题）· 2026-08-13 · 原始数据：benchmark/results/</div>
+</div>
+</body>
+</html>

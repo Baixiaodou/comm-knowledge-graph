@@ -1,0 +1,43 @@
+知识库加载完成：全量 63814 字符 | 树目录 5649 字符
+题库：15 题
+模型：5 个，共 10 组（裸跑 + 知识库）
+
+=== deepseek-chat [bare] ===
+  [L3-comm-h1] L3 分=8
+  [L3-comm-h2] L3 分=9
+  [L3-dsp-h1] L3 分=9
+  [L3-dsp-h2] L3 分=9
+  [L3-mob-h1] L3 分=9
+  [L3-mob-h2] L3 分=9
+  [L3-rsp-h1] L3 分=9
+  [L3-net-h1] L3 分=9
+  [L4-cross-h1] L4 分=8
+  [L4-cross-h2] L4 分=8
+  [L4-cross-h3] L4 分=8
+  [L4-cross-h4] L4 分=8
+  [L4-cross-h5] L4 分=8
+  [L4-cross-h6] L4 分=8
+  [L4-cross-h7] L4 分=8
+
+=== deepseek-chat [with_kb] ===
+  [L3-comm-h1] L3 分=9
+  [L3-comm-h2] L3 分=9
+  [L3-dsp-h1] L3 分=9
+  [L3-dsp-h2] L3 分=9
+  [L3-mob-h1] L3 分=9
+  [L3-mob-h2] L3 分=9
+  [L3-rsp-h1] L3 分=9
+  [L3-net-h1] L3 分=9
+  [L4-cross-h1] L4 分=9
+  [L4-cross-h2] L4 分=9
+  [L4-cross-h3] L4 分=9
+  [L4-cross-h4] L4 分=9
+  [L4-cross-h5] L4 分=8
+  [L4-cross-h6] L4 分=9
+  [L4-cross-h7] L4 分=9
+
+=== Qwen/Qwen3-8B [bare] ===
+  [L3-comm-h1] L3 分=6
+  [L3-comm-h2] L3 分=9
+  [L3-dsp-h1] L3 分=9
+  [L3-dsp-h2] L3 分=9

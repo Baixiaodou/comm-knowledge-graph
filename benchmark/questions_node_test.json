@@ -1,0 +1,655 @@
+{
+  "meta": {
+    "name": "节点选择 benchmark v10：v5 35题 + 反直觉难题 15题",
+    "version": "10.0",
+    "count": 50,
+    "note": "专门测选节点召回率，含难题（跨树抽象/相似概念/多节点），expected 全 core/leaf",
+    "judge": "qwen-max"
+  },
+  "questions": [
+    {
+      "id": "L3-comm-01",
+      "level": 3,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "DSB 与 SSB 系统的抗噪声性能是否相同？为什么？",
+      "answer": "理论上相同。DSB 双边带每边带各含一半信号功率，SSB 单边带带宽减半、噪声也减半，在相同发送功率、相同噪声功率谱密度下，相干解调的输出信噪比相等。区别是 SSB 省一半带宽、DSB 实现更简单。",
+      "expected_nodes": [
+        "comm-am"
+      ]
+    },
+    {
+      "id": "L3-comm-02",
+      "level": 3,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "为什么卫星通信用 QPSK 而不用 16QAM？星座图说明了什么？",
+      "answer": "卫星功率受限、信噪比低，QPSK 星座点间距大、抗干扰强；16QAM 频带利用率高但点间距小、抗噪弱。星座图相邻点最小距离决定抗噪能力，总能量固定时星座阶数越高点间距越小。",
+      "expected_nodes": [
+        "comm-rf-mod"
+      ]
+    },
+    {
+      "id": "L3-comm-03",
+      "level": 3,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "香农公式和奈奎斯特准则分别给出什么上限？有何区别？",
+      "answer": "香农 C=B·log2(1+S/N) 给容量上限（根本限制是噪声），奈奎斯特给无 ISI 码率上限（2bit/Hz，由带宽和符号率决定）。香农是理论上限锚点，奈奎斯特是无 ISI 前提下的码率上限，两者配合构成通信系统两大上限。",
+      "expected_nodes": [
+        "comm-shannon",
+        "comm-baseband"
+      ]
+    },
+    {
+      "id": "L3-comm-04",
+      "level": 3,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "信道编码为什么要加冗余？ARQ 和 FEC 有什么区别？",
+      "answer": "信道编码加冗余提供检错纠错能力，对抗信道噪声。ARQ 是检出错误请求重发（需反馈信道、有延迟），FEC 是接收端直接纠错（不需反馈、实时性好）。两者是差错控制的不同方式。",
+      "expected_nodes": [
+        "comm-channel-coding"
+      ]
+    },
+    {
+      "id": "L3-dsp-01",
+      "level": 3,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "频谱分析中的泄漏、栅栏效应、频率分辨率分别指什么？补零能提高分辨率吗？",
+      "answer": "泄漏是时域截断（乘窗）导致频域卷积 sinc 的旁瓣；栅栏效应是 DFT 只在离散频点取值漏看谱峰；分辨率 Δf=fs/N 只由真实数据长度决定。补零只是插值、让栅栏变密，不提高真实分辨率。",
+      "expected_nodes": [
+        "dsp-spectrum"
+      ]
+    },
+    {
+      "id": "L3-dsp-02",
+      "level": 3,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "FFT 为什么比直接 DFT 快？旋转因子的三个性质是什么？",
+      "answer": "FFT 用分治 + 复用旋转因子性质，把 N² 降到 (N/2)log₂N。旋转因子 W_N=e^(-j2π/N) 三个性质：周期性 W^(k+N)=W^k、对称性 W^(k+N/2)=-W^k、可约性 W^(2k)=W_(N/2)^k。",
+      "expected_nodes": [
+        "dsp-fft"
+      ]
+    },
+    {
+      "id": "L3-dsp-03",
+      "level": 3,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "拉普拉斯变换和 Z 变换是什么关系？ROC 如何判断因果稳定？",
+      "answer": "拉普拉斯/Z = 傅里叶 + 衰减因子，傅里叶是 σ=0（虚轴/单位圆）的特例。s↔z 映射 z=e^(sT)。因果⇔ROC 在极点圆外，稳定⇔ROC 含单位圆，因果稳定⇔所有极点在单位圆内。",
+      "expected_nodes": [
+        "dsp-laplace-z"
+      ]
+    },
+    {
+      "id": "L3-mob-01",
+      "level": 3,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "小尺度衰落中，多径效应和多普勒效应分别导致什么？四大效应是什么？",
+      "answer": "多径效应导致时延扩展→频率选择性衰落→ISI；多普勒效应导致频偏→时间选择性衰落。四大效应：阴影效应（地形遮挡）、多径效应（→ISI）、多普勒效应（→频偏）、远近效应（→功率控制）。",
+      "expected_nodes": [
+        "mob-small-scale"
+      ]
+    },
+    {
+      "id": "L3-mob-02",
+      "level": 3,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "分集技术为什么能对抗快衰落？有哪些分集方式和合并方式？",
+      "answer": "多个相互独立的衰落信号同时深衰落的概率极小，合并后电平稳定。分集方式：空间/频率/时间/极化。合并方式：选择合并（简单）、等增益合并（简单够用）、最大比值合并（最优但复杂）。",
+      "expected_nodes": [
+        "mob-diversity"
+      ]
+    },
+    {
+      "id": "L3-mob-03",
+      "level": 3,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "蜂窝组网中，区群大小 N 的选择有什么权衡？",
+      "answer": "区群 N 越大→同频小区距离越远→同频干扰越小，但频率复用效率越低。这是\"干扰 vs 效率\"的权衡。区群大小 N=a²+ab+b²。",
+      "expected_nodes": [
+        "mob-cellular"
+      ]
+    },
+    {
+      "id": "L3-rsp-01",
+      "level": 3,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "维纳-辛钦定理说明了什么？白噪声的自相关和功率谱是什么关系？",
+      "answer": "维纳-辛钦：自相关函数↔功率谱密度是一对傅里叶变换对，是随机信号频域分析的入口。白噪声自相关=σ²δ(τ)（时域无记忆），功率谱=σ²（频域平坦），一体两面。",
+      "expected_nodes": [
+        "rsp-wiener-khinchin"
+      ]
+    },
+    {
+      "id": "L3-rsp-02",
+      "level": 3,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "严平稳、宽平稳、各态历经分别是什么？为什么要引入宽平稳？",
+      "answer": "严平稳要求任意维分布平移不变（太严），宽平稳只要均值常数+自相关只跟时差有关（工程够用）。各态历经让单个样本的时间平均等于集平均。引入宽平稳为后续维纳-辛钦等定理打基础。",
+      "expected_nodes": [
+        "rsp-stationarity"
+      ]
+    },
+    {
+      "id": "L3-rsp-03",
+      "level": 3,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "随机过程通过 LTI 系统后，输出功率谱怎么变？",
+      "answer": "输出功率谱 S_YY(f)=|H(f)|²·S_XX(f)，系统不改变谱形状类别、只按 |H(f)|² 加权缩放。输出均值 μ_Y=μ_X*h，自相关 R_YY=R_XX*h(τ)*h(-τ)。",
+      "expected_nodes": [
+        "rsp-lti"
+      ]
+    },
+    {
+      "id": "L3-net-01",
+      "level": 3,
+      "disciplines": [
+        "计算机网络"
+      ],
+      "question": "TCP 和 UDP 的核心区别是什么？分别适用什么场景？",
+      "answer": "TCP 面向连接、可靠（确认/重传/序号）、有流量和拥塞控制、较慢，适合可靠性要求高的场景；UDP 无连接、不可靠、无控制、快，适合实时应用。本质是可靠性换速度的权衡。",
+      "expected_nodes": [
+        "net-transport"
+      ]
+    },
+    {
+      "id": "L3-net-02",
+      "level": 3,
+      "disciplines": [
+        "计算机网络"
+      ],
+      "question": "OSI 七层模型和 TCP/IP 四层模型有什么区别？",
+      "answer": "OSI 七层（物理/链路/网络/传输/会话/表示/应用），TCP/IP 四层（网络接口/网络/传输/应用）。TCP/IP 把会话表示层并入应用层、物理链路层合并为网络接口层，更简单、是事实标准。",
+      "expected_nodes": [
+        "net-architecture",
+        "net-principles"
+      ]
+    },
+    {
+      "id": "L3-net-03",
+      "level": 3,
+      "disciplines": [
+        "计算机网络"
+      ],
+      "question": "CSMA/CD 和 CSMA/CA 有什么区别？为什么无线网用 CSMA/CA？",
+      "answer": "CSMA/CD（有线）先听后发、边发边听、冲突停发；CSMA/CA（无线）无法边发边听，用冲突避免+虚拟载波侦听+随机退避。无线环境存在隐藏终端问题，检测不到冲突，所以用避免而非检测。",
+      "expected_nodes": [
+        "net-data-link"
+      ]
+    },
+    {
+      "id": "L3-emf-01",
+      "level": 3,
+      "disciplines": [
+        "电磁场"
+      ],
+      "question": "麦克斯韦方程组四个方程分别说明什么？电磁波怎么产生？",
+      "answer": "电场高斯定理（电场有源）、磁场高斯定理（磁场无源）、法拉第电磁感应（变化磁场生电场）、全电流安培定律（电流和变化电场生磁场）。时变电磁场相互激发、加速电荷辐射→电磁波。",
+      "expected_nodes": [
+        "emf-principles"
+      ]
+    },
+    {
+      "id": "L4-cross-01",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "信号与系统与DSP"
+      ],
+      "question": "OFDM 为什么用 IFFT/FFT 实现调制解调？循环前缀 CP 为什么用循环卷积而不是补零？",
+      "answer": "IFFT/FFT 把 N 路子载波的调制解调变成 O(N·logN) 的运算。CP 长度>最大时延扩展，把线性卷积变循环卷积；循环卷积既消 ISI 又保子载波正交（ICI），补零只能消 ISI 不能保正交。",
+      "expected_nodes": [
+        "mob-ofdm",
+        "dsp-fft",
+        "dsp-dft"
+      ]
+    },
+    {
+      "id": "L4-cross-02",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "通信原理"
+      ],
+      "question": "扩频通信的核心原理是什么？它和香农公式有什么关系？",
+      "answer": "扩频是香农公式 C=B·log2(1+S/N) 的逆用：带宽和信噪比可互换。解扩时有用信号与扩频码相关（聚拢成窄带）、干扰不相关（摊薄成宽带），信噪比提高=扩频增益，从而抗干扰抗截获。",
+      "expected_nodes": [
+        "mob-spread-spectrum",
+        "comm-shannon"
+      ]
+    },
+    {
+      "id": "L4-cross-03",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "信号与系统与DSP"
+      ],
+      "question": "从信号与系统的角度看，多径衰落导致的码间串扰 ISI 本质是什么？",
+      "answer": "多径使信道相当于卷积一个多径冲激响应 h(t)，输出 y=x*h 产生拖尾，前面符号的拖尾叠加到后面符号上=ISI。这是线性卷积的拖尾效应，时延扩展越大拖尾越长、ISI 越严重。",
+      "expected_nodes": [
+        "mob-small-scale",
+        "dsp-basics",
+        "comm-isi"
+      ]
+    },
+    {
+      "id": "L4-cross-04",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "随机信号处理"
+      ],
+      "question": "移动通信里瑞利/莱斯分布的前提是什么？和随机信号的窄带高斯有什么关系？",
+      "answer": "瑞利（无直射）/莱斯（有直射）分布的前提是窄带高斯噪声：带宽不超过相干带宽、频谱平坦。窄带高斯信号的包络统计上服从瑞利/莱斯分布，这是随机信号统计特性在移动信道上的应用。",
+      "expected_nodes": [
+        "mob-small-scale",
+        "rsp-white-noise"
+      ]
+    },
+    {
+      "id": "L4-cross-05",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "信号与系统与DSP"
+      ],
+      "question": "均衡器做逆系统对抗 ISI，为什么最小相位系统保证逆系统稳定？",
+      "answer": "信道卷积产生 ISI，均衡器构造 h⁻¹ 让 y·h⁻¹≈x。逆系统 h⁻¹ 存在且稳定的前提是系统是最小相位（零极点都在单位圆内），否则逆系统不稳定或非因果。最小相位系统保证逆系统存在且稳定。",
+      "expected_nodes": [
+        "mob-equalization",
+        "dsp-min-phase",
+        "comm-receiver"
+      ]
+    },
+    {
+      "id": "L4-cross-06",
+      "level": 4,
+      "disciplines": [
+        "通信原理",
+        "随机信号处理"
+      ],
+      "question": "AWGN 的\"白\"和\"高斯\"分别对应什么统计特性？",
+      "answer": "白=功率谱平坦（自相关=δ，不同时刻不相关），高斯=幅度服从高斯分布。AWGN 同时满足两者，过线性系统仍为高斯，是通信系统最常用的噪声模型。白的统计特性来自随机信号的白噪声。",
+      "expected_nodes": [
+        "comm-awgn",
+        "rsp-white-noise"
+      ]
+    },
+    {
+      "id": "L4-cross-07",
+      "level": 4,
+      "disciplines": [
+        "移动通信",
+        "电磁场"
+      ],
+      "question": "路径损耗为什么随距离和频率增加？从电磁波传播角度解释。",
+      "answer": "电磁波能量像球面扩散，接收机只接住球面一小部分，距离越远能量越分散（损耗越大）；频率越高波束越集中但空间衰减越大。频率或距离翻倍损耗都增加 6dB，这是电磁波自由空间传播的结果。",
+      "expected_nodes": [
+        "mob-large-scale",
+        "emf-principles"
+      ]
+    },
+    {
+      "id": "L4-cross-08",
+      "level": 4,
+      "disciplines": [
+        "通信原理",
+        "随机信号处理"
+      ],
+      "question": "匹配滤波器为什么能最大化输出信噪比？它和信号检测有什么关系？",
+      "answer": "白噪声背景下匹配滤波器传输函数=信号频谱复共轭，T 时刻各频率分量同相相加成峰值，使采样时刻 SNR 最大。它是信号检测中已知信号+噪声下检测有无信号（H0/H1）的最优接收。",
+      "expected_nodes": [
+        "comm-receiver",
+        "rsp-detection"
+      ]
+    },
+    {
+      "id": "L4-cross-09",
+      "level": 4,
+      "disciplines": [
+        "计算机网络",
+        "通信原理"
+      ],
+      "question": "TCP 的可靠传输（确认/重传/序号）和通信原理的 ARQ 是什么关系？",
+      "answer": "TCP 的可靠传输就是 ARQ（检错重发）在传输层的实现：序号定位、确认反馈、超时重传。ARQ 是通信原理信道编码里的差错控制方式，TCP 把它搬到了端到端的传输层。",
+      "expected_nodes": [
+        "net-transport",
+        "comm-channel-coding"
+      ]
+    },
+    {
+      "id": "L4-cross-10",
+      "level": 4,
+      "disciplines": [
+        "计算机网络",
+        "通信原理"
+      ],
+      "question": "数据链路层的差错控制和信道编码是什么关系？",
+      "answer": "数据链路层的差错控制（ARQ/FEC/检错丢弃）就是通信原理信道编码的工程应用：信道编码加冗余提供检错纠错，数据链路层用它做帧级差错控制（如 CRC 检错 + 重传）。两者同源。",
+      "expected_nodes": [
+        "net-data-link",
+        "comm-channel-coding"
+      ]
+    },
+    {
+      "id": "L4-cross-11",
+      "level": 4,
+      "disciplines": [
+        "计算机网络",
+        "移动通信"
+      ],
+      "question": "CSMA/CD 的多址接入和移动通信的多址技术（FDMA/TDMA/CDMA）有什么本质区别？",
+      "answer": "CSMA/CD 是竞争式（随机接入）：大家抢信道、冲突重发；FDMA/TDMA/CDMA 是分配式（固定接入）：预先划分频/时/码资源给用户。竞争式适合突发、低负载，分配式适合稳定、高负载。",
+      "expected_nodes": [
+        "net-data-link",
+        "mob-multiple-access"
+      ]
+    },
+    {
+      "id": "L4-cross-12",
+      "level": 4,
+      "disciplines": [
+        "信号与系统与DSP",
+        "通信原理"
+      ],
+      "question": "采样定理的奈奎斯特和通信原理的奈奎斯特准则是一回事吗？分别是什么？",
+      "answer": "不是。采样定理的奈奎斯特：fs≥2fmax 才能无失真还原（时域采样→频域延拓不混叠）；通信原理的奈奎斯特准则：无 ISI 最大码率=2×带宽（2bit/Hz）。两个\"奈奎斯特\"是不同的定理。",
+      "expected_nodes": [
+        "dsp-sampling-theorem",
+        "comm-baseband"
+      ]
+    },
+    {
+      "id": "L4-cross-13",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理",
+        "信号与系统与DSP"
+      ],
+      "question": "白噪声通过低通滤波器后变成什么？输出功率谱怎么算？",
+      "answer": "变成带限（有色）噪声。输出功率谱 S_YY(f)=|H(f)|²·S_XX(f)：白噪声谱平坦 σ²，乘 |H(f)|² 后被低通滤波器的频响整形，只在通带内平坦、通带外衰减。",
+      "expected_nodes": [
+        "rsp-lti",
+        "dsp-fir"
+      ]
+    },
+    {
+      "id": "L4-cross-14",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理",
+        "信号与系统与DSP"
+      ],
+      "question": "功率谱估计和 DFT 的频谱分析有什么关系？",
+      "answer": "功率谱估计（周期图法/BT法）用 DFT 计算：周期图法直接对数据做 DFT 取平方均值，BT 法先估自相关再做傅里叶变换（维纳-辛钦应用）。DFT 是功率谱估计的计算工具，但要处理加窗、方差等问题。",
+      "expected_nodes": [
+        "rsp-estimation",
+        "dsp-spectrum"
+      ]
+    },
+    {
+      "id": "L4-cross-15",
+      "level": 4,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "信源编码（去冗余）和信道编码（加冗余）为什么是一对对偶？",
+      "answer": "信源编码去冗余提升有效性（逼近信源熵下限），信道编码加冗余提升可靠性（提供检错纠错）。一个压缩信息、一个保护信息，目的相反但都用冗余/信息论概念，构成有效性↔可靠性的权衡对偶。",
+      "expected_nodes": [
+        "comm-source-coding",
+        "comm-channel-coding"
+      ]
+    },
+    {
+      "id": "L4-cross-16",
+      "level": 4,
+      "disciplines": [
+        "电磁场",
+        "移动通信"
+      ],
+      "question": "天线辐射的电磁波和移动通信的无线信道是什么关系？",
+      "answer": "天线把导行波转成空间辐射波，电磁波在空间传播（直射/反射/绕射/散射）构成无线信道。移动信道的衰落（路径损耗、多径）本质是电磁波传播的物理结果，天线是电磁波发射接收的物理接口。",
+      "expected_nodes": [
+        "emf-principles",
+        "mob-large-scale"
+      ]
+    },
+    {
+      "id": "L4-cross-17",
+      "level": 4,
+      "disciplines": [
+        "通信原理",
+        "信号与系统与DSP"
+      ],
+      "question": "数字基带的升余弦成型滤波和接收端匹配滤波是什么关系？",
+      "answer": "升余弦（RRC 分收发两端）用于成型限带、控制 ISI；接收端 RRC 恰好是匹配滤波器，在采样时刻最大化 SNR。发射成型 + 接收匹配滤波构成最优收发对，是通信与 DSP 滤波理论的结合。",
+      "expected_nodes": [
+        "comm-baseband",
+        "comm-receiver"
+      ]
+    },
+    {
+      "id": "L4-cross-18",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "维纳滤波和卡尔曼滤波的区别是什么？各适用什么场景？",
+      "answer": "维纳滤波用全部过去观测线性加权、MMSE 准则，适用平稳信号但计算量大难实时；卡尔曼滤波递推计算（预测→增益→滤波），适用平稳/非平稳、便于实时。卡尔曼是维纳的递推推广。",
+      "expected_nodes": [
+        "rsp-parameter-estimation"
+      ]
+    },
+    {
+      "id": "H-dsp-01",
+      "level": 4,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "为什么对正弦波恰好用 2 倍频率采样会失败？明明满足采样定理 fs≥2fmax。",
+      "answer": "正弦波的频谱是位于 ±fmax 的两根离散谱线，不是连续谱。恰好以 2fmax 采样时，这两根谱线在奈奎斯特频率处重叠（混叠），且采样点可能全落在正弦的过零点上，无法还原幅度和相位。所以采样定理的正确表述是 fs>2fmax（严格大于），\"等于\"在正弦这种临界信号上会失败。",
+      "expected_nodes": [
+        "dsp-sampling-theorem"
+      ]
+    },
+    {
+      "id": "H-dsp-02",
+      "level": 4,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "加窗为什么会造成频谱泄漏？主瓣和旁瓣的物理本质是什么？",
+      "answer": "时域截断（乘矩形窗）在频域表现为与 sinc 函数卷积，sinc 的主瓣使谱峰展宽、旁瓣使能量从主瓣泄漏到邻近频段。主瓣宽度决定频率分辨能力，旁瓣高度决定泄漏程度，两者此消彼长（主瓣窄则旁瓣高）。换窗函数（汉宁/汉明）就是牺牲主瓣宽度换旁瓣压低。",
+      "expected_nodes": [
+        "dsp-spectrum"
+      ]
+    },
+    {
+      "id": "H-dsp-03",
+      "level": 4,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "DFT 的\"隐含周期性\"为什么会导致循环卷积？它和线性卷积是什么关系？",
+      "answer": "DFT 数学上是周期序列 DFS 取主值区间，有限长序列被 DFT 处理时自动周期延拓，所以时域卷积变成循环卷积（周期混叠）。循环卷积=线性卷积以 N 为周期延拓后混叠相加的主值；补零到 L≥N1+N2-1 时，L 点循环卷积就等于线性卷积（无混叠）。",
+      "expected_nodes": [
+        "dsp-dft"
+      ]
+    },
+    {
+      "id": "H-dsp-04",
+      "level": 4,
+      "disciplines": [
+        "信号与系统与DSP"
+      ],
+      "question": "为什么 FIR 天生稳定，而 IIR 可能不稳定？",
+      "answer": "FIR 无反馈结构、只有零点没有极点，冲激响应有限长，任何有限输入都产生有限输出，所以必然稳定。IIR 有反馈、存在极点，若极点在单位圆外，冲激响应随时间发散，系统不稳定。\"反馈\"只是表象，\"极点位置是否在单位圆内\"才是稳定性的本质判据。",
+      "expected_nodes": [
+        "dsp-fir",
+        "dsp-iir"
+      ]
+    },
+    {
+      "id": "H-comm-01",
+      "level": 4,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "为什么 DSB-SC 不能用包络检波，而普通 AM 可以？",
+      "answer": "DSB-SC 抑制了载波分量，已调信号的包络不再等于消息信号（包络在消息过零点处发生反转），所以包络检波会失真，必须用相干解调。普通 AM 保留了载波分量，只要调幅度 m≤1，包络就等于消息信号，可用简单的包络检波。区别在于\"有没有保留载波分量\"。",
+      "expected_nodes": [
+        "comm-am"
+      ]
+    },
+    {
+      "id": "H-comm-02",
+      "level": 4,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "为什么 2PSK 有相位模糊问题，而 DPSK 用差分编码就解决了？",
+      "answer": "2PSK 用平方环等自同步法提取载波时，平方运算丢失了 180° 的极性信息，恢复的本地载波可能反相，导致解调数据整体取反（相位模糊）。DPSK 把信息编码在相邻码元的相位差里，即使载波反相，相位差不变，所以不受 180° 模糊影响。代价是差分解调性能略逊于相干 PSK。",
+      "expected_nodes": [
+        "comm-rf-mod",
+        "comm-sync"
+      ]
+    },
+    {
+      "id": "H-comm-03",
+      "level": 4,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "为什么偏偏是匹配滤波器能最大化输出信噪比，而不是别的滤波器？",
+      "answer": "这是施瓦茨不等式的直接结果：输出采样时刻的 SNR 上限，当且仅当滤波器传输函数等于信号频谱的复共轭（h(t)=s(T-t)）时取等号。匹配滤波器让各频率分量在采样时刻同相相加成峰值，是数学上可证明的 SNR 最优解，不是工程经验凑出来的。",
+      "expected_nodes": [
+        "comm-receiver"
+      ]
+    },
+    {
+      "id": "H-comm-04",
+      "level": 4,
+      "disciplines": [
+        "通信原理"
+      ],
+      "question": "为什么 PSK 不能用包络检波，而 ASK、FSK 可以？",
+      "answer": "PSK 所有码元幅度相同（等能量、等包络），信息只承载在相位上，包络检波只提取幅度，会丢掉全部信息。ASK 信息在幅度（包络可变）、FSK 信息在频率（可用鉴频/过零检测），所以可以用非相干方式。本质：信息承载在哪个维度，解调就必须提取哪个维度。",
+      "expected_nodes": [
+        "comm-rf-mod"
+      ]
+    },
+    {
+      "id": "H-mob-01",
+      "level": 4,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "为什么 CDMA 会出现\"呼吸效应\"——用户增多系统不是线性变差而是突然崩溃？",
+      "answer": "CDMA 是软容量系统，所有用户同频同时工作、互相构成干扰。当用户数增加，总干扰逐渐累积，一旦超过某个阈值（干扰余量耗尽），所有链路的信噪比同时跌破门限，系统容量呈\"悬崖式\"崩塌。加上远近效应（近处强信号淹没远处弱信号），功率控制一旦跟不上，崩溃更剧烈。",
+      "expected_nodes": [
+        "mob-spread-spectrum",
+        "mob-mobility"
+      ]
+    },
+    {
+      "id": "H-mob-02",
+      "level": 4,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "为什么 OFDM 对频偏特别敏感，比单载波系统敏感得多？",
+      "answer": "单载波频偏只是整体频谱搬移，可通过载波同步校正。OFDM 有 N 路正交子载波，频偏使各子载波在 FFT 采样点上不再正交，产生载波间干扰 ICI——一路子载波的能量泄漏到相邻子载波，N 路互相污染。所以 OFDM 必须精确频偏估计和补偿（加导频）。",
+      "expected_nodes": [
+        "mob-ofdm"
+      ]
+    },
+    {
+      "id": "H-mob-03",
+      "level": 4,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "为什么多普勒频移会导致\"时间选择性衰落\"？",
+      "answer": "多普勒频移的本质是\"信道随时间变化\"（收发相对运动使各径相位随时间变）。当符号周期大于相干时间（信道发生显著变化的时间尺度），信道在一个符号内不再近似时不变，信号经历时变信道，衰落随时间剧烈变化，这就是时间选择性衰落（快衰落）。关键是\"信道时变\"而非\"频偏\"本身。",
+      "expected_nodes": [
+        "mob-small-scale"
+      ]
+    },
+    {
+      "id": "H-mob-04",
+      "level": 4,
+      "disciplines": [
+        "移动通信"
+      ],
+      "question": "为什么分集接收要求各支路\"统计独立\"，相关性高就没有增益？",
+      "answer": "分集增益来自概率：单路陷入深衰落的概率为 p，L 路独立时所有路同时深衰落的概率降到 p^L（指数下降）。这个结论成立的前提是各路衰落统计独立。若各路高度相关（天线靠太近、频率间隔小于相干带宽），则它们同时深衰落，概率仍是 p，分集增益消失。",
+      "expected_nodes": [
+        "mob-diversity",
+        "mob-small-scale"
+      ]
+    },
+    {
+      "id": "H-rsp-01",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "为什么高斯过程通过线性系统后仍然是高斯过程？",
+      "answer": "高斯分布的线性组合仍是高斯分布（分布族在仿射变换下封闭）。线性系统输出是输入的加权和/卷积积分，即输入高斯随机变量的线性组合，所以输出仍是高斯。这是\"线性系统+高斯输入\"最优雅的性质，也是 AWGN 信道模型能贯穿通信系统分析的根本原因。",
+      "expected_nodes": [
+        "rsp-lti",
+        "rsp-white-noise"
+      ]
+    },
+    {
+      "id": "H-rsp-02",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "为什么窄带高斯噪声的包络服从瑞利分布，而不是高斯分布？",
+      "answer": "窄带高斯噪声可写成 n(t)=nc(t)cosωt - ns(t)sinωt，同相分量 nc 和正交分量 ns 是两个独立高斯随机变量。包络 r=√(nc²+ns²) 是两个高斯平方和的平方根，这个合成变量的分布才是瑞利分布。\"噪声是高斯\"指 nc、ns 是高斯，\"包络\"是它们的模，是另一个随机变量的分布。",
+      "expected_nodes": [
+        "rsp-white-noise",
+        "mob-small-scale"
+      ]
+    },
+    {
+      "id": "H-rsp-03",
+      "level": 4,
+      "disciplines": [
+        "随机信号处理"
+      ],
+      "question": "为什么\"白噪声\"的\"白\"和\"高斯\"是两个独立属性，可以拆开组合？",
+      "answer": "\"白\"指频域特性：功率谱平坦（自相关函数是 δ 冲激，时域无记忆）；\"高斯\"指幅度分布：服从高斯分布。两者正交独立：白噪声可以是均匀分布的（白但非高斯），高斯噪声可以有色的（高斯但非白）。AWGN 是同时满足两个条件的特例，\"白\"和\"高斯\"不能划等号。",
+      "expected_nodes": [
+        "rsp-white-noise"
+      ]
+    }
+  ]
+}

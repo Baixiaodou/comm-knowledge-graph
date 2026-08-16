@@ -1,0 +1,86 @@
+{
+  "deepseek-chat|bare": {
+    "model": "deepseek-chat",
+    "mode": "bare",
+    "all": 8.36,
+    "L3": 8.5,
+    "L4": 8.23
+  },
+  "deepseek-chat|with_kb": {
+    "model": "deepseek-chat",
+    "mode": "with_kb",
+    "all": 8.69,
+    "L3": 8.92,
+    "L4": 8.5
+  },
+  "Qwen/Qwen3.5-9B|bare": {
+    "model": "Qwen/Qwen3.5-9B",
+    "mode": "bare",
+    "all": 8.04,
+    "L3": 8.08,
+    "L4": 8.0
+  },
+  "Qwen/Qwen3.5-9B|with_kb": {
+    "model": "Qwen/Qwen3.5-9B",
+    "mode": "with_kb",
+    "all": 8.19,
+    "L3": 8.17,
+    "L4": 8.21
+  },
+  "Qwen/Qwen3-8B|bare": {
+    "model": "Qwen/Qwen3-8B",
+    "mode": "bare",
+    "all": 7.81,
+    "L3": 8.08,
+    "L4": 7.57
+  },
+  "Qwen/Qwen3-8B|with_kb": {
+    "model": "Qwen/Qwen3-8B",
+    "mode": "with_kb",
+    "all": 7.92,
+    "L3": 7.92,
+    "L4": 7.93
+  },
+  "Qwen/Qwen3-14B|bare": {
+    "model": "Qwen/Qwen3-14B",
+    "mode": "bare",
+    "all": 7.77,
+    "L3": 7.75,
+    "L4": 7.79
+  },
+  "Qwen/Qwen3-14B|with_kb": {
+    "model": "Qwen/Qwen3-14B",
+    "mode": "with_kb",
+    "all": 8.08,
+    "L3": 8.33,
+    "L4": 7.86
+  },
+  "Qwen/Qwen3-32B|bare": {
+    "model": "Qwen/Qwen3-32B",
+    "mode": "bare",
+    "all": 7.92,
+    "L3": 8.08,
+    "L4": 7.79
+  },
+  "Qwen/Qwen3-32B|with_kb": {
+    "model": "Qwen/Qwen3-32B",
+    "mode": "with_kb",
+    "all": 8.04,
+    "L3": 8.17,
+    "L4": 7.93
+  },
+  "THUDM/GLM-4-32B-0414|bare": {
+    "model": "THUDM/GLM-4-32B-0414",
+    "mode": "bare",
+    "all": 7.96,
+    "L3": 8.0,
+    "L4": 7.93
+  },
+  "THUDM/GLM-4-32B-0414|with_kb": {
+    "model": "THUDM/GLM-4-32B-0414",
+    "mode": "with_kb",
+    "all": 8.04,
+    "L3": 8.17,
+    "L4": 7.93
+  }
+}

@@ -1,0 +1,766 @@
+{
+  "_note": "自动生成，不手动编辑。由 tools/build_tree.py 从 nodes/*.md frontmatter 构建。",
+  "nodes": {
+    "comm-am": {
+      "title": "幅度调制（线性调制）",
+      "parent": "comm-analog",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-analog": {
+      "title": "模拟调制",
+      "parent": "comm-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "comm-am",
+        "comm-angle"
+      ]
+    },
+    "comm-angle": {
+      "title": "角度调制（FM / PM）",
+      "parent": "comm-analog",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-awgn": {
+      "title": "加性白高斯噪声（AWGN）",
+      "parent": "comm-channel",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-baseband": {
+      "title": "数字基带",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "comm-channel-coding": {
+      "title": "信道编码",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-channel": {
+      "title": "信道",
+      "parent": "comm-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "comm-awgn",
+        "comm-isi",
+        "comm-shannon"
+      ]
+    },
+    "comm-digital": {
+      "title": "数字调制",
+      "parent": "comm-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 7,
+      "has_cot": false,
+      "children": [
+        "comm-baseband",
+        "comm-channel-coding",
+        "comm-multiplexing",
+        "comm-receiver",
+        "comm-rf-mod",
+        "comm-source-coding"
+      ]
+    },
+    "comm-isi": {
+      "title": "信道特性导致的 ISI",
+      "parent": "comm-channel",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-multiplexing": {
+      "title": "复用与多载波",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "comm-principles": {
+      "title": "通信原理",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": [
+        "comm-analog",
+        "comm-channel",
+        "comm-digital",
+        "comm-rf-circuit"
+      ]
+    },
+    "comm-receiver": {
+      "title": "接收端",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "core",
+      "link_count": 6,
+      "has_cot": true,
+      "children": [
+        "comm-sync"
+      ]
+    },
+    "comm-rf-circuit": {
+      "title": "射频电路",
+      "parent": "comm-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-rf-mod": {
+      "title": "射频调制（数字带通）",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "comm-shannon": {
+      "title": "香农公式（信道容量）",
+      "parent": "comm-channel",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "comm-source-coding": {
+      "title": "信源编码",
+      "parent": "comm-digital",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 5,
+      "has_cot": false,
+      "children": []
+    },
+    "comm-sync": {
+      "title": "同步（载波/位/帧）",
+      "parent": "comm-receiver",
+      "depth": 4,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-basics": {
+      "title": "信号与系统基础",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 4,
+      "has_cot": false,
+      "children": []
+    },
+    "dsp-dft-fft": {
+      "title": "DFT 与 FFT",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "dsp-dft",
+        "dsp-fft"
+      ]
+    },
+    "dsp-dft": {
+      "title": "DFT（离散傅里叶变换）",
+      "parent": "dsp-dft-fft",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-fft": {
+      "title": "FFT（快速傅里叶变换）",
+      "parent": "dsp-dft-fft",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-filter": {
+      "title": "数字滤波器",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 5,
+      "has_cot": false,
+      "children": [
+        "dsp-fir",
+        "dsp-iir",
+        "dsp-min-phase"
+      ]
+    },
+    "dsp-fir": {
+      "title": "FIR 滤波器设计",
+      "parent": "dsp-filter",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 4,
+      "has_cot": false,
+      "children": []
+    },
+    "dsp-fourier-family": {
+      "title": "傅里叶家族（FS/CTFT/DTFT/DFT）",
+      "parent": "dsp-transforms",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-iir": {
+      "title": "IIR 滤波器设计",
+      "parent": "dsp-filter",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "dsp-laplace-z": {
+      "title": "拉普拉斯变换与 Z 变换",
+      "parent": "dsp-transforms",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-min-phase": {
+      "title": "最小相位与全通系统",
+      "parent": "dsp-filter",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "dsp-principles": {
+      "title": "信号与系统与数字信号处理",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 8,
+      "has_cot": true,
+      "children": [
+        "dsp-basics",
+        "dsp-dft-fft",
+        "dsp-filter",
+        "dsp-sampling",
+        "dsp-spectrum",
+        "dsp-transforms"
+      ]
+    },
+    "dsp-reconstruction": {
+      "title": "重建与多采样率",
+      "parent": "dsp-sampling",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "dsp-sampling-theorem": {
+      "title": "采样定理（时域/频域镜像）",
+      "parent": "dsp-sampling",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-sampling": {
+      "title": "采样与重建",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "dsp-reconstruction",
+        "dsp-sampling-theorem"
+      ]
+    },
+    "dsp-spectrum": {
+      "title": "频谱分析",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "dsp-transforms": {
+      "title": "变换域",
+      "parent": "dsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "dsp-fourier-family",
+        "dsp-laplace-z"
+      ]
+    },
+    "emf-principles": {
+      "title": "电磁场与电磁波",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-5g": {
+      "title": "5G 与前沿",
+      "parent": "mob-systems",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-anti-fading": {
+      "title": "抗衰落技术",
+      "parent": "mob-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 6,
+      "has_cot": false,
+      "children": [
+        "mob-diversity",
+        "mob-equalization",
+        "mob-mimo",
+        "mob-ofdm",
+        "mob-spread-spectrum"
+      ]
+    },
+    "mob-cellular": {
+      "title": "蜂窝组网",
+      "parent": "mob-networking",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-channel": {
+      "title": "无线信道分析",
+      "parent": "mob-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "mob-large-scale",
+        "mob-small-scale"
+      ]
+    },
+    "mob-diversity": {
+      "title": "分集技术",
+      "parent": "mob-anti-fading",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-duplex": {
+      "title": "双工方式（FDD/TDD）",
+      "parent": "mob-networking",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-equalization": {
+      "title": "均衡与交织",
+      "parent": "mob-anti-fading",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-gsm": {
+      "title": "GSM 系统（2G）",
+      "parent": "mob-systems",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-large-scale": {
+      "title": "大尺度衰落（路径损耗/阴影）",
+      "parent": "mob-channel",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-mimo": {
+      "title": "MIMO（多输入多输出）",
+      "parent": "mob-anti-fading",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-mobility": {
+      "title": "移动性管理（切换/位置/功率）",
+      "parent": "mob-networking",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-multiple-access": {
+      "title": "多址技术",
+      "parent": "mob-networking",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "mob-networking": {
+      "title": "多址与组网",
+      "parent": "mob-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "mob-cellular",
+        "mob-duplex",
+        "mob-mobility",
+        "mob-multiple-access"
+      ]
+    },
+    "mob-ofdm": {
+      "title": "OFDM（正交频分复用）",
+      "parent": "mob-anti-fading",
+      "depth": 3,
+      "type": "core",
+      "link_count": 5,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-principles": {
+      "title": "移动通信",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": [
+        "mob-anti-fading",
+        "mob-channel",
+        "mob-networking",
+        "mob-systems"
+      ]
+    },
+    "mob-small-scale": {
+      "title": "小尺度衰落（多径/多普勒）",
+      "parent": "mob-channel",
+      "depth": 3,
+      "type": "core",
+      "link_count": 6,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-spread-spectrum": {
+      "title": "扩频与CDMA",
+      "parent": "mob-anti-fading",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "mob-systems": {
+      "title": "系统演进（GSM→5G）",
+      "parent": "mob-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "mob-5g",
+        "mob-gsm"
+      ]
+    },
+    "net-application": {
+      "title": "应用层（HTTP/TLS/安全）",
+      "parent": "net-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "net-architecture": {
+      "title": "网络体系结构",
+      "parent": "net-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "net-data-link": {
+      "title": "数据链路层",
+      "parent": "net-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "net-network": {
+      "title": "网络层（IP 与路由）",
+      "parent": "net-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "net-principles": {
+      "title": "计算机网络",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 6,
+      "has_cot": true,
+      "children": [
+        "net-application",
+        "net-architecture",
+        "net-data-link",
+        "net-network",
+        "net-transport"
+      ]
+    },
+    "net-transport": {
+      "title": "传输层（TCP/UDP）",
+      "parent": "net-principles",
+      "depth": 2,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "root": {
+      "title": "通信工程知识体系",
+      "parent": "",
+      "depth": 0,
+      "type": "hub",
+      "link_count": 6,
+      "has_cot": false,
+      "children": [
+        "comm-principles",
+        "dsp-principles",
+        "emf-principles",
+        "mob-principles",
+        "net-principles",
+        "rsp-principles"
+      ]
+    },
+    "rsp-autocorrelation": {
+      "title": "自相关函数",
+      "parent": "rsp-correlation",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-correlation": {
+      "title": "自相关与功率谱",
+      "parent": "rsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "rsp-autocorrelation",
+        "rsp-wiener-khinchin"
+      ]
+    },
+    "rsp-definition": {
+      "title": "随机过程定义与分类",
+      "parent": "rsp-process",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-detection-estimation": {
+      "title": "信号检测与估计",
+      "parent": "rsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "rsp-detection",
+        "rsp-parameter-estimation"
+      ]
+    },
+    "rsp-detection": {
+      "title": "信号检测",
+      "parent": "rsp-detection-estimation",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-estimation": {
+      "title": "功率谱估计",
+      "parent": "rsp-through-system",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-lti": {
+      "title": "随机过程通过 LTI 系统",
+      "parent": "rsp-through-system",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "rsp-parameter-estimation": {
+      "title": "参数估计与滤波",
+      "parent": "rsp-detection-estimation",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-principles": {
+      "title": "随机信号处理",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": [
+        "rsp-correlation",
+        "rsp-detection-estimation",
+        "rsp-process",
+        "rsp-through-system"
+      ]
+    },
+    "rsp-process": {
+      "title": "随机过程基础",
+      "parent": "rsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "rsp-definition",
+        "rsp-stationarity",
+        "rsp-statistics"
+      ]
+    },
+    "rsp-stationarity": {
+      "title": "平稳性与各态历经",
+      "parent": "rsp-process",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-statistics": {
+      "title": "数值特征（均值/方差/自相关）",
+      "parent": "rsp-process",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-through-system": {
+      "title": "随机信号通过系统",
+      "parent": "rsp-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "rsp-estimation",
+        "rsp-lti",
+        "rsp-white-noise"
+      ]
+    },
+    "rsp-white-noise": {
+      "title": "白噪声与窄带高斯",
+      "parent": "rsp-through-system",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 3,
+      "has_cot": false,
+      "children": []
+    },
+    "rsp-wiener-khinchin": {
+      "title": "维纳-辛钦定理",
+      "parent": "rsp-correlation",
+      "depth": 3,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": []
+    }
+  }
+}
