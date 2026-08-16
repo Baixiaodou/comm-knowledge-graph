@@ -1,13 +1,11 @@
-# 通信工程知识库 · Knowledge Base v2
+# 通信工程知识库 · Communication Knowledge Base v2
 
 > 一个面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目：把通信工程课程知识组织成「节点 + 树层级 + Wiki 关联 + 思维链」三层结构，配套严谨的多模型评测，验证了一套优于朴素检索的方案。
 
 <p align="center">
   <img src="https://img.shields.io/badge/节点-74-2b6cb0?style=flat" alt="nodes">
-  <img src="https://img.shields.io/badge/主题树-6-2b6cb0?style=flat" alt="trees">
-  <img src="https://img.shields.io/badge/核心思维链-27-2b6cb0?style=flat" alt="cot">
+  <img src="https://img.shields.io/badge/思维链-27-2b6cb0?style=flat" alt="cot">
   <img src="https://img.shields.io/badge/连接-260-2b6cb0?style=flat" alt="links">
-  <img src="https://img.shields.io/badge/跨树连接-73-2b6cb0?style=flat" alt="cross">
   <img src="https://img.shields.io/badge/benchmark-116题-2f855a?style=flat" alt="benchmark">
   <img src="https://img.shields.io/badge/license-MIT-9aa5b1?style=flat" alt="license">
 </p>
@@ -26,7 +24,8 @@
 | DeepSeek | 大模型 | 8.300 | 8.611 | +0.311 | +3.75% |
 | Qwen3-32B | 32B | 8.139 | 8.378 | +0.239 | +2.94% |
 
-> † 8B 与 GLM 在反直觉难题集的裸跑数据因 API 限流缺失，无法计算合并后整体增益；表中为普通题（35 题）口径的相对提升。
+> [!NOTE]
+> 8B 与 GLM 在反直觉难题集的裸跑数据因 API 限流缺失，无法计算合并后整体增益；表中为普通题（35 题）口径的相对提升。
 
 ---
 
@@ -47,6 +46,7 @@
 
 大语言模型（LLM）在回答**专业课程问题**时存在明显短板：对通信原理、信号处理这类需要精确概念与推理的领域，通用模型常出现**概念混淆、要点遗漏**，甚至被"反直觉陷阱题"带偏。
 
+> [!IMPORTANT]
 > 典型陷阱：「DSB 与 SSB 的抗噪性能是否相同？」——公平比较下两者相同，但大量资料误传"SSB 更优 3dB"。实测多个中小模型（7B/8B/14B/32B）均答错，因其训练语料中混入了错误答案。
 
 本项目探索的核心问题：**如何用外部知识库增强 LLM 的专业问答能力？** 围绕它完整解决三个子问题：
@@ -77,11 +77,9 @@
 
 ```mermaid
 graph LR
-    subgraph 三种结构
-        T[树层级<br/>parent / children] --> T1[回答「是什么」<br/>概念归属分类]
-        W[Wiki 连接<br/>links] --> W1[回答「和什么相关」<br/>跨学科语义关联]
-        C[思维链<br/>cot] --> C1[回答「怎么想」<br/>推理路径]
-    end
+    T[树层级] --> T1[是什么：分类]
+    W[Wiki 连接] --> W1[和什么相关]
+    C[思维链] --> C1[怎么想]
     style T fill:#2b6cb0,color:#fff
     style W fill:#b7791f,color:#fff
     style C fill:#2f855a,color:#fff
@@ -172,12 +170,12 @@ OFDM 把一路高速数据拆成 N 路低速正交子载波，用 CP 把线性�
 
 ```mermaid
 graph TB
-    ROOT[通信工程知识体系] --> COMM[通信原理<br/>枢纽=权衡<br/>17 节点]
-    ROOT --> DSP[信号与系统 + DSP<br/>枢纽=对偶对称<br/>16 节点]
-    ROOT --> MOB[移动通信<br/>枢纽=三大矛盾<br/>18 节点]
-    ROOT --> RSP[随机信号处理<br/>枢纽=维纳-辛钦<br/>15 节点]
-    ROOT --> EMF[电磁场<br/>1 节点]
-    ROOT --> NET[计算机网络<br/>枢纽=分层<br/>6 节点]
+    ROOT[通信工程知识体系] --> COMM[通信原理 (17)]
+    ROOT --> DSP[信号与系统 + DSP (16)]
+    ROOT --> MOB[移动通信 (18)]
+    ROOT --> RSP[随机信号处理 (15)]
+    ROOT --> EMF[电磁场 (1)]
+    ROOT --> NET[计算机网络 (6)]
 
     COMM --> C1[模拟调制]
     COMM --> C2[信道]
@@ -255,6 +253,7 @@ conclusion: "信道容量是信息论给出的上限；根本限制是噪声"
 ## 代价与权衡      ← 呼应全库「权衡」枢纽
 ```
 
+> [!TIP]
 > 这一写法后来被 benchmark 验证为**最大的隐性功臣**：它让朴素 TF-IDF 关键词检索已能覆盖 90% 的关联，远超结构设计带来的增量。
 
 ---
@@ -267,11 +266,11 @@ conclusion: "信道容量是信息论给出的上限；根本限制是噪声"
 
 ```mermaid
 flowchart LR
-    Q[用户问题] --> A["① TF-IDF 初筛<br/>排除 hub / root<br/>取 top-3"]
-    A --> B["② links 扩展<br/>补入语义关联邻居"]
-    B --> C["③ LLM 精挑<br/>选 2-3 个<br/>最相关节点"]
-    C --> D["④ 注入答题<br/>content + 思维链<br/>+ links 关系"]
-    D --> E[LLM 答题]
+    Q[问题] --> A["① TF-IDF 初筛"]
+    A --> B["② links 扩展"]
+    B --> C["③ LLM 精挑"]
+    C --> D["④ 注入答题"]
+    D --> E[答案]
     style C fill:#2f855a,color:#fff
 ```
 
