@@ -29,3 +29,7 @@ Thumbs.db
 # 日志与缓存
 *.log
 logs/
+
+# 复习插件本地数据（学习记录 + 题库数据库，不提交）
+review/data/
+*.db
