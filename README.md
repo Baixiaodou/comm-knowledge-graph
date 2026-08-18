@@ -4,8 +4,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/节点-74-2b6cb0?style=flat-square" alt="nodes">
-  <img src="https://img.shields.io/badge/思维链-27-2b6cb0?style=flat-square" alt="cot">
-  <img src="https://img.shields.io/badge/连接-260-2b6cb0?style=flat-square" alt="links">
+  <img src="https://img.shields.io/badge/思维链-31-2b6cb0?style=flat-square" alt="cot">
+  <img src="https://img.shields.io/badge/连接-271-2b6cb0?style=flat-square" alt="links">
   <img src="https://img.shields.io/badge/benchmark-116_题-2f855a?style=flat-square" alt="benchmark">
   <img src="https://img.shields.io/badge/RAG-知识图谱-805ad5?style=flat-square" alt="rag">
   <img src="https://img.shields.io/badge/Streamlit-复习插件-ff4b4b?style=flat-square" alt="streamlit">
@@ -100,10 +100,10 @@ flowchart LR
 知识的组织，本质要回答三个问题——**这是什么、它和什么相关、该怎么想**。用三种结构分别回答：
 
 ```mermaid
-graph LR
-    T[树层级] --> T1[是什么：分类]
-    W[Wiki 连接] --> W1[和什么相关]
-    C[思维链] --> C1[怎么想]
+flowchart LR
+    T[树层级] --> T1["是什么：分类"]
+    W[Wiki 连接] --> W1["和什么相关"]
+    C[思维链] --> C1["怎么想"]
     style T fill:#2b6cb0,color:#fff
     style W fill:#b7791f,color:#fff
     style C fill:#2f855a,color:#fff
@@ -117,9 +117,10 @@ graph LR
 
 ```mermaid
 flowchart TB
-    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（27）<br/>带 cot 思维链：为什么 → 推导 → 结论"]
+    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（31）<br/>带 cot 思维链：为什么 → 推导 → 结论"]
     MD --> HUB["🟡 hub · 枢纽（16）<br/>统领子节点、组织层次，无思维链"]
-    MD --> LEAF["🟢 leaf · 叶子（31）<br/>具体知识点，树的末端"]
+    MD --> LEAF["🟢 leaf · 叶子（27）<br/>具体知识点，树的末端"]
+    style MD fill:#805ad5,color:#fff
     style CORE fill:#2b6cb0,color:#fff
     style HUB fill:#b7791f,color:#fff
     style LEAF fill:#2f855a,color:#fff
@@ -127,9 +128,9 @@ flowchart TB
 
 | 类型 | 含义 | 特征 | 数量 |
 |------|------|------|:---:|
-| `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 27 |
+| `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 31 |
 | `hub` | 分类文件夹 | 统领子节点、组织层次，无思维链 | 16 |
-| `leaf` | 叶子知识点 | 具体知识点，树的末端 | 31 |
+| `leaf` | 叶子知识点 | 具体知识点，树的末端 | 27 |
 
 每门课一个**贯穿性枢纽**（写在核心节点里），让每门课有一条清晰的思维主线：
 
@@ -206,7 +207,7 @@ OFDM 把一路高速数据拆成 N 路低速正交子载波，用 CP 把线性�
 `root` 之下挂六棵主题树，构成课程层次：
 
 ```mermaid
-graph TB
+flowchart TB
     ROOT[通信工程知识体系] --> COMM[通信原理（17）]
     ROOT --> DSP[信号与系统 + DSP（16）]
     ROOT --> MOB[移动通信（18）]
@@ -221,7 +222,13 @@ graph TB
     C3 --> C32[信源编码]
     C3 --> C33[信道编码]
 
-    style ROOT fill:#6b46c1,color:#fff
+    style ROOT fill:#805ad5,color:#fff
+    style COMM fill:#2b6cb0,color:#fff
+    style DSP fill:#2b6cb0,color:#fff
+    style MOB fill:#2b6cb0,color:#fff
+    style RSP fill:#2b6cb0,color:#fff
+    style EMF fill:#2b6cb0,color:#fff
+    style NET fill:#2b6cb0,color:#fff
     style C31 fill:#b7791f,color:#fff
 ```
 
@@ -260,7 +267,7 @@ flowchart LR
     style MP fill:#2f855a,color:#fff
 ```
 
-> **关键价值**：links 能救回「关键词完全不重合、但语义强相关」的节点——纯关键词检索匹配不到「均衡器」与「最小相位」的关联，links 沿图一跳即可补上。全库共 **260 条连接，其中 73 条跨树连接**。
+> **关键价值**：links 能救回「关键词完全不重合、但语义强相关」的节点——纯关键词检索匹配不到「均衡器」与「最小相位」的关联，links 沿图一跳即可补上。全库共 **271 条连接，其中 76 条跨树连接**。
 
 ### 6. cot（思维链）设计
 
@@ -313,12 +320,17 @@ conclusion: "信道容量是信息论给出的上限；根本限制是噪声"
 
 ```mermaid
 flowchart LR
-    Q[问题] --> A["① TF-IDF 初筛"]
+    Q["问题"] --> A["① TF-IDF 初筛"]
     A --> B["② links 扩展"]
     B --> C["③ LLM 精挑"]
     C --> D["④ 注入答题"]
-    D --> E[答案]
-    style C fill:#2f855a,color:#fff
+    D --> E["答案"]
+    style Q fill:#805ad5,color:#fff
+    style A fill:#2f855a,color:#fff
+    style B fill:#2f855a,color:#fff
+    style C fill:#b7791f,color:#fff
+    style D fill:#2f855a,color:#fff
+    style E fill:#2b6cb0,color:#fff
 ```
 
 ### 2. 检索方案演进史
@@ -388,6 +400,12 @@ flowchart LR
     KB --> J
     J --> G["对比增益"]
     G --> R["重复 3 次<br/>压噪声"]
+    style Q fill:#805ad5,color:#fff
+    style RAW fill:#2b6cb0,color:#fff
+    style KB fill:#2b6cb0,color:#fff
+    style J fill:#b7791f,color:#fff
+    style G fill:#2f855a,color:#fff
+    style R fill:#2f855a,color:#fff
 ```
 
 1. **多模型对照**：DeepSeek + Qwen3（8B/14B/32B）+ GLM-5.2，覆盖 8B 到大模型全档
@@ -475,6 +493,12 @@ flowchart LR
     A --> M["自评掌握度"]
     M --> DB[("SQLite<br/>学习记录")]
     DB -.-> G
+    style G fill:#2b6cb0,color:#fff
+    style N fill:#2f855a,color:#fff
+    style Q fill:#2f855a,color:#fff
+    style A fill:#2f855a,color:#fff
+    style M fill:#b7791f,color:#fff
+    style DB fill:#805ad5,color:#fff
 ```
 
 **两大模块：**
