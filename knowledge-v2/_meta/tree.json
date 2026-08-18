@@ -536,36 +536,36 @@
       "title": "应用层（HTTP/TLS/安全）",
       "parent": "net-principles",
       "depth": 2,
-      "type": "leaf",
-      "link_count": 2,
-      "has_cot": false,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
       "children": []
     },
     "net-architecture": {
       "title": "网络体系结构",
       "parent": "net-principles",
       "depth": 2,
-      "type": "leaf",
-      "link_count": 2,
-      "has_cot": false,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
       "children": []
     },
     "net-data-link": {
       "title": "数据链路层",
       "parent": "net-principles",
       "depth": 2,
-      "type": "leaf",
-      "link_count": 2,
-      "has_cot": false,
+      "type": "core",
+      "link_count": 5,
+      "has_cot": true,
       "children": []
     },
     "net-network": {
       "title": "网络层（IP 与路由）",
       "parent": "net-principles",
       "depth": 2,
-      "type": "leaf",
-      "link_count": 3,
-      "has_cot": false,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
       "children": []
     },
     "net-principles": {
@@ -573,7 +573,7 @@
       "parent": "root",
       "depth": 1,
       "type": "core",
-      "link_count": 6,
+      "link_count": 8,
       "has_cot": true,
       "children": [
         "net-application",
@@ -588,12 +588,12 @@
       "parent": "net-principles",
       "depth": 2,
       "type": "core",
-      "link_count": 3,
+      "link_count": 5,
       "has_cot": true,
       "children": []
     },
     "root": {
-      "title": "通信工程知识体系",
+      "title": "白陈宏羿的知识体系",
       "parent": "",
       "depth": 0,
       "type": "hub",

@@ -12,6 +12,10 @@ links:
     relation: "传输层与数据链路层都有差错/流量控制，但范围不同（端到端 vs 相邻节点）"
   - id: net-principles
     relation: "传输层是分层的端到端层"
+  - id: net-network
+    relation: "传输层之下是网络层（主机到主机），传输层补上端口实现进程到进程"
+  - id: net-application
+    relation: "应用层协议跑在 TCP/UDP 之上（HTTP/DNS 等），传输层是应用层与网络层的中介"
 cot:
   origin: "同一份数据要可靠地送到对端，该用 TCP 还是 UDP？"
   reasoning: |
@@ -21,7 +25,7 @@ cot:
     4. 权衡：可靠性换速度——TCP 适合可靠性要求高，UDP 适合实时应用
   conclusion: "TCP/UDP = 可靠性与速度的权衡；TCP 用确认重传换可靠，UDP 用不可靠换低延迟"
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-18
 ---
 
 ## 一句话本质

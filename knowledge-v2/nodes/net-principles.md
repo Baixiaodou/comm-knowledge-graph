@@ -18,6 +18,10 @@ links:
     relation: "应用层：HTTP 演进、TLS、网络安全"
   - id: comm-principles
     relation: "分层思想 = 通信系统五部分模块化在更大尺度上的应用"
+  - id: comm-shannon
+    relation: "物理层速率上限（奈奎斯特/香农）是网络性能的天花板，通原给了物理层的底子"
+  - id: comm-multiplexing
+    relation: "物理层复用（FDM/TDM/WDM/CDM）是共享信道的技术基础，链路层多址是它的动态版"
 cot:
   origin: "网络这么复杂（多主机、多协议、多应用），怎么把它组织起来？"
   reasoning: |
@@ -28,7 +32,7 @@ cot:
     5. 分层好处：解耦、独立演进、屏蔽底层差异
   conclusion: "分层 = 计算机网络的万能钥匙；封装/解封装贯穿始终，每层解决一个问题"
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-18
 ---
 
 ## 一句话本质
