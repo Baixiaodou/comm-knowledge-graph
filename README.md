@@ -38,6 +38,7 @@
 - [评测体系](#评测体系)
 - [项目结构](#项目结构)
 - [快速开始](#快速开始)
+- [复习出题插件](#复习出题插件)
 - [设计文档](#设计文档)
 
 ---
@@ -385,6 +386,7 @@ knowledge-base/
 │   ├── test_top34.py        # 检索方案对比测试
 │   ├── build_tree.py        # 生成树结构索引
 │   └── kb_lint.py           # 知识库完整性校验
+├── review/                  # 复习出题插件（Streamlit，只读知识库）
 └── docs/                    # 设计文档（01-06）
 ```
 
@@ -402,6 +404,26 @@ python tools/build_tree.py
 # 3. 跑评测（需配置 API key，见 tools/.env.example）
 python tools/test_top34.py
 ```
+
+---
+
+## 复习出题插件
+
+基于本知识库的 AI 复习出题插件（目录 `review/`，Streamlit Web）。**只读知识库、不修改树结构**，题目与学习记录独立存储。
+
+**两大模块：**
+
+- **定向出题**：渲染全知识图谱（节点颜色 = 掌握度）；选任意节点自动学习其及所有子节点；优先 benchmark 题库（116 题），答完可 AI 生成简答 / 判断 / 填空；答案解析只引用节点原文。
+- **学习状态记录**：掌握度五档 + 做题数；无记录 = 灰、薄弱难点 = 红、其余橙 → 黄 → 绿渐变；本地 SQLite 存储，可按节点查历史。
+
+```bash
+cd review
+pip install -r requirements.txt
+cp .env.example .env        # 填入 DEEPSEEK_API_KEY（或 SILICONFLOW_API_KEY）
+streamlit run app.py
+```
+
+> ⚠️ 当前为**初版（MVP）**：选节点靠下拉框（暂不支持点击图谱直接选中）、判断题/填空题只能 AI 生成、暂无追问/题目编辑/导入导出。Phase 2 规划：单题追问、题目编辑与导入导出、难度自适应、点击图谱直接选节点。
 
 ---
 
