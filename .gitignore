@@ -33,3 +33,6 @@ logs/
 # 复习插件本地数据（学习记录 + 题库数据库，不提交）
 review/data/
 *.db
+
+# 多轮追问评测原始结果（题库+脚本可复现，原始 json 不入库）
+benchmark/results/

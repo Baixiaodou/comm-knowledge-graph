@@ -1,0 +1,1536 @@
+{
+  "_meta": {
+    "subject": "通信原理 + DSP + 随机信号 多轮追问",
+    "note": "dependency 档位: first=首问(独立检索) D1=裸指代/强依赖(≤8字) D2=短追问(≤15字) D3=中等(16-25字) D4=长自包含(>25字) D5=新话题(负例) chitchat=闲聊(负例)。expected_nodes=该轮注入应命中的 core/leaf 节点。",
+    "created": "2026-08-20",
+    "sources": [
+      "个人对话常用.txt",
+      "洛洛真实对话日志(conversation_summaries + journalctl)"
+    ],
+    "node_ids": "来自 knowledge-v2/_meta/tree.json 的 core/leaf 节点"
+  },
+  "dialogues": [
+    {
+      "id": "mt-01",
+      "topic": "频域采样与周期延拓",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "时域采样满足奈奎斯特两倍要求，为什么频域采N点，时域做N点周期延拓？",
+          "dependency": "first",
+          "expected": [
+            "dsp-dft",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "为什么采样频率除以2得到最高频率，DFT的N点为什么不用除以2？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-dft",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "周期延拓什么条件下会发生混叠？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-sampling-theorem",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "既然时域采样满足奈奎斯特条件时频域才采 N 点做周期延拓，那么当频域采样点数 N 不够大时，周期延拓会在什么条件下发生混叠？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-dft",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "那反过来，不做周期延拓会怎样？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-dft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-02",
+      "topic": "DTFT 与 DFT",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "DTFT到DFT，这是上采样吗？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fourier-family",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "DTFT和DFT本质区别是什么？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-fourier-family",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "DFT频点是由什么决定？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "本质区别呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-fourier-family",
+            "dsp-dft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-03",
+      "topic": "DFT 循环卷积混叠",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "DFT做循环卷积会有混叠，为什么还可以正常计算？",
+          "dependency": "first",
+          "expected": [
+            "dsp-dft",
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "循环卷积混叠情况下，已知信道H，能不能还原原始输入？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "需要记住哪个关键参数？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "既然循环卷积会带来混叠但系统还能正常计算，那么在已知信道 H 的前提下，通过什么样的运算可以还原出原始输入序列？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "关键参数呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-dft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-04",
+      "topic": "DFT 补点与线性卷积",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "两个序列补到M点做DFT相乘再IDFT，会不会产生混叠？",
+          "dependency": "first",
+          "expected": [
+            "dsp-dft",
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "想要等价线性卷积，M需要满足什么条件？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "OFDM为什么要用循环卷积？",
+          "dependency": "D2",
+          "expected": [
+            "mob-ofdm",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "那 M 的条件呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-dft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-05",
+      "topic": "FFT 功能与性质",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "FFT除了做循环卷积，还有哪些功能？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "FFT本身是线性变换吗？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "栅栏效应是FFT带来的吗？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fft",
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "那它还是线性的吗？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-fft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-06",
+      "topic": "FFT 卷积与混叠",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "使用FFT实现卷积，是不是必须补偿到线性卷积，不能允许混叠？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fft",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "什么场景允许直接使用带混叠的循环卷积？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "循环卷积混叠和时域混叠是一回事吗？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-dft",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "允许混叠的场景呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-dft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-07",
+      "topic": "FFT 复杂度",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "FFT加速卷积，复杂度为什么是N+M‑1，而不是M log₂M？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "直接线性卷积复杂度是多少？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "补零会不会增加算法计算复杂度？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "补零呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-fft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-08",
+      "topic": "FFT 补零与分辨率",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "FFT做卷积为什么要补零？DFT本身需要补零吗？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fft",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "OFDM的IFFT/FFT运算需要补零么？",
+          "dependency": "D3",
+          "expected": [
+            "mob-ofdm",
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "末尾补零可以提升频率分辨率吗？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum",
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "既然 FFT 做卷积需要补零来避免混叠，那 OFDM 系统里的 IFFT 和 FFT 运算是否也需要补零，补零和不补零对结果有什么影响？",
+          "dependency": "D4",
+          "expected": [
+            "mob-ofdm",
+            "dsp-fft"
+          ]
+        },
+        {
+          "q": "那频率分辨率呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-09",
+      "topic": "DFT 三大问题",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "频谱泄露、栅栏效应、加窗，是不是DFT的三大问题？",
+          "dependency": "first",
+          "expected": [
+            "dsp-spectrum",
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "频谱泄露根源是什么？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "栅栏效应怎么缓解？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "泄露根源呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-10",
+      "topic": "频谱泄露与吉布斯",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "频谱泄露和吉布斯现象是一回事吗？",
+          "dependency": "first",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "时域加窗带来频谱泄露，那频域加窗会带来什么？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "吉布斯现象出现在时域还是频域？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "那吉布斯现象呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-11",
+      "topic": "栅栏效应与分辨率",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "栅栏效应：补零只能增加频点密度，不能提升频率分辨率，为什么？",
+          "dependency": "first",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "真正提升频率分辨率依靠什么？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "频点间隔和物理频率分辨率区别？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "既然补零只能增加频点密度而不能提升物理频率分辨率，那么真正提升频率分辨率需要依靠什么，频点间隔和物理分辨率又有什么区别？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "那真正靠什么提？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-12",
+      "topic": "观测时间与分辨精度",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "增加观测时间，为什么可以提升DTFT的频率分辨精度？",
+          "dependency": "first",
+          "expected": [
+            "dsp-spectrum",
+            "dsp-fourier-family"
+          ]
+        },
+        {
+          "q": "观测时间不变，单纯末尾补零效果是什么？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "主瓣宽度和观测时间是什么关系？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "补零呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-13",
+      "topic": "窗函数参数",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "窗函数主瓣、旁瓣、过渡带，哪些由窗长决定，哪些由窗形状决定？",
+          "dependency": "first",
+          "expected": [
+            "dsp-spectrum",
+            "dsp-fir"
+          ]
+        },
+        {
+          "q": "主瓣宽度是不是零点到零点之间的距离？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "更换窗函数，频谱零点会改变吗？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "主瓣宽度呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-14",
+      "topic": "H(s) 与 H(z)",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "H(s)和H(z)分别是什么含义？",
+          "dependency": "first",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        },
+        {
+          "q": "CTFT、DTFT分别和它们是什么关系？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-laplace-z",
+            "dsp-fourier-family"
+          ]
+        },
+        {
+          "q": "收敛域代表什么物理意义？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        },
+        {
+          "q": "收敛域呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-15",
+      "topic": "H(s) 时域与稳定性",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "H(s)对应的时域是什么？",
+          "dependency": "first",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        },
+        {
+          "q": "拉普拉斯变换和傅里叶变换关系？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-laplace-z",
+            "dsp-fourier-family"
+          ]
+        },
+        {
+          "q": "稳定系统对s域极点位置有什么要求？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        },
+        {
+          "q": "极点要求呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-laplace-z"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-16",
+      "topic": "冲激响应不变法",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "冲激响应不变法，是不是直接对h(t)采样？为什么公式会多出T_s系数？",
+          "dependency": "first",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "冲激响应不变法最大缺陷是什么？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "适合什么类型滤波器？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "最大缺陷呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-iir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-17",
+      "topic": "双线性变换",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "双线性变换法会发生频率畸变，是非线性变换吗？什么是预畸变？",
+          "dependency": "first",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "双线性变换有没有频谱混叠问题？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "预畸变做在哪一步？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "预畸变做在哪一步？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-iir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-18",
+      "topic": "线性相位与群时延",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "什么是线性相位，群时延物理意义？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fir",
+            "dsp-min-phase"
+          ]
+        },
+        {
+          "q": "为什么相位失真会产生码间串扰，幅度失真却不会？",
+          "dependency": "D3",
+          "expected": [
+            "comm-isi",
+            "dsp-fir"
+          ]
+        },
+        {
+          "q": "为什么因果稳定IIR不能实现严格线性相位？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-iir",
+            "dsp-min-phase"
+          ]
+        },
+        {
+          "q": "既然相位失真会产生码间串扰而幅度失真不会，那么为什么因果稳定的 IIR 滤波器不能实现严格的线性相位？",
+          "dependency": "D4",
+          "expected": [
+            "dsp-iir",
+            "dsp-min-phase"
+          ]
+        },
+        {
+          "q": "那 IIR 呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-iir",
+            "dsp-min-phase"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-19",
+      "topic": "上采样插零与补零",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "上采样中间插零和末尾补零，二者有什么区别？",
+          "dependency": "first",
+          "expected": [
+            "dsp-reconstruction"
+          ]
+        },
+        {
+          "q": "中间插零之后频谱发生什么变化？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-reconstruction"
+          ]
+        },
+        {
+          "q": "末尾补零对时域、频域分别产生什么效果？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-reconstruction",
+            "dsp-spectrum"
+          ]
+        },
+        {
+          "q": "插零之后频谱呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-20",
+      "topic": "抽取与混叠",
+      "source": "个人对话常用",
+      "subject": "DSP",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "M倍抽取，采样率下降，频谱为什么会展宽？",
+          "dependency": "first",
+          "expected": [
+            "dsp-reconstruction"
+          ]
+        },
+        {
+          "q": "抽取什么条件会发生混叠？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-reconstruction",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "抽取前为什么要抗混叠滤波？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-reconstruction",
+            "dsp-sampling-theorem"
+          ]
+        },
+        {
+          "q": "混叠条件呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-reconstruction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-21",
+      "topic": "切比雪夫 FIR/IIR",
+      "source": "个人对话常用",
+      "subject": "滤波器",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "五阶切比雪夫带通滤波器，是FIR还是IIR？",
+          "dependency": "first",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "怎么快速区分FIR与IIR？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fir",
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "IIR一定存在反馈结构吗？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "怎么快速区分？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-fir",
+            "dsp-iir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-22",
+      "topic": "切比雪夫 I/II 型",
+      "source": "个人对话常用",
+      "subject": "滤波器",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "切比雪夫I型、II型、巴特沃斯各有什么特点？",
+          "dependency": "first",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "I型波纹出现在哪里？II型呢？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "设计时如何选型？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "波纹出现在哪？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-iir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-23",
+      "topic": "FIR/IIR 设计方法",
+      "source": "个人对话常用",
+      "subject": "滤波器",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "FIR、IIR有哪些经典设计方法，为什么IIR命名多，FIR很少？",
+          "dependency": "first",
+          "expected": [
+            "dsp-fir",
+            "dsp-iir"
+          ]
+        },
+        {
+          "q": "窗函数法设计FIR的优缺点？",
+          "dependency": "D2",
+          "expected": [
+            "dsp-fir"
+          ]
+        },
+        {
+          "q": "FIR可以做到任意非线性相位吗？",
+          "dependency": "D3",
+          "expected": [
+            "dsp-fir",
+            "dsp-min-phase"
+          ]
+        },
+        {
+          "q": "窗函数法呢？",
+          "dependency": "D1",
+          "expected": [
+            "dsp-fir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-24",
+      "topic": "能量与功率信号",
+      "source": "个人对话常用",
+      "subject": "移动通信与随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "能量信号和功率信号是什么？随机信号为什么大多是功率信号？",
+          "dependency": "first",
+          "expected": [
+            "rsp-definition",
+            "rsp-statistics"
+          ]
+        },
+        {
+          "q": "能量信号一定是确定信号吗？",
+          "dependency": "D2",
+          "expected": [
+            "rsp-definition"
+          ]
+        },
+        {
+          "q": "通信与DSP中谁占主导，为什么两类都要学习？",
+          "dependency": "D3",
+          "expected": [
+            "rsp-definition"
+          ]
+        },
+        {
+          "q": "那随机信号呢？",
+          "dependency": "D1",
+          "expected": [
+            "rsp-definition"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-25",
+      "topic": "瑞利与莱斯分布",
+      "source": "个人对话常用",
+      "subject": "移动通信与随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "窄带信号包络服从瑞利、莱斯分布，包络特性就能代表是窄带信号吗？",
+          "dependency": "first",
+          "expected": [
+            "rsp-white-noise",
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "瑞利、莱斯分布的前提条件分别是什么？",
+          "dependency": "D3",
+          "expected": [
+            "rsp-white-noise",
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "直射分量对应哪一种分布？",
+          "dependency": "D2",
+          "expected": [
+            "mob-small-scale",
+            "rsp-white-noise"
+          ]
+        },
+        {
+          "q": "既然窄带信号的包络服从瑞利或莱斯分布，那么这两种分布各自的前提条件是什么，有直射分量的时候对应哪一种？",
+          "dependency": "D4",
+          "expected": [
+            "rsp-white-noise",
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "前提条件呢？",
+          "dependency": "D1",
+          "expected": [
+            "rsp-white-noise",
+            "mob-small-scale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-26",
+      "topic": "多普勒与相干",
+      "source": "个人对话常用",
+      "subject": "移动通信与随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "多普勒带宽来自多径还是多普勒效应？相干带宽、相干时间是什么？",
+          "dependency": "first",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "相干带宽由什么物理量决定？",
+          "dependency": "D2",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "相干时间和多普勒带宽是什么数学关系？",
+          "dependency": "D3",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "既然多普勒带宽和相干时间、相干带宽之间存在对应关系，那么相干带宽具体由什么物理量决定，它和多普勒带宽是什么数学关系？",
+          "dependency": "D4",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "相干带宽呢？",
+          "dependency": "D1",
+          "expected": [
+            "mob-small-scale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-27",
+      "topic": "平坦与频率选择性衰落",
+      "source": "个人对话常用",
+      "subject": "移动通信与随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "平坦/频率选择性衰落，快/慢衰落是什么关系？可以组合吗？",
+          "dependency": "first",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "快衰落慢衰落只由多普勒效应决定吗？",
+          "dependency": "D3",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "什么条件发生频率选择性衰落？",
+          "dependency": "D2",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "那快慢衰落呢？",
+          "dependency": "D1",
+          "expected": [
+            "mob-small-scale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-28",
+      "topic": "大尺度与小尺度衰落",
+      "source": "个人对话常用",
+      "subject": "移动通信与随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "大尺度衰落和小尺度衰落的关系？",
+          "dependency": "first",
+          "expected": [
+            "mob-large-scale",
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "大尺度衰落成因？",
+          "dependency": "D2",
+          "expected": [
+            "mob-large-scale"
+          ]
+        },
+        {
+          "q": "路径损耗属于哪一类衰落？",
+          "dependency": "D2",
+          "expected": [
+            "mob-large-scale"
+          ]
+        },
+        {
+          "q": "大尺度成因呢？",
+          "dependency": "D1",
+          "expected": [
+            "mob-large-scale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-29",
+      "topic": "交织编码",
+      "source": "个人对话常用",
+      "subject": "信道编码",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "交织编码的作用是什么？",
+          "dependency": "first",
+          "expected": [
+            "mob-equalization",
+            "comm-channel-coding"
+          ]
+        },
+        {
+          "q": "交织能不能纠错？",
+          "dependency": "D2",
+          "expected": [
+            "mob-equalization"
+          ]
+        },
+        {
+          "q": "会带来什么代价？",
+          "dependency": "D2",
+          "expected": [
+            "mob-equalization"
+          ]
+        },
+        {
+          "q": "既然交织编码的作用是把突发错误打散成随机错误，那么交织本身能不能纠错，它又会带来什么样的额外代价？",
+          "dependency": "D4",
+          "expected": [
+            "mob-equalization"
+          ]
+        },
+        {
+          "q": "能纠错吗？",
+          "dependency": "D1",
+          "expected": [
+            "mob-equalization"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-30",
+      "topic": "循环码",
+      "source": "个人对话常用",
+      "subject": "信道编码",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "循环码如何实现？",
+          "dependency": "first",
+          "expected": [
+            "comm-channel-coding"
+          ]
+        },
+        {
+          "q": "循环码属于线性分组码吗？",
+          "dependency": "D2",
+          "expected": [
+            "comm-channel-coding"
+          ]
+        },
+        {
+          "q": "生成多项式作用是什么？",
+          "dependency": "D2",
+          "expected": [
+            "comm-channel-coding"
+          ]
+        },
+        {
+          "q": "生成多项式呢？",
+          "dependency": "D1",
+          "expected": [
+            "comm-channel-coding"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-real-01",
+      "topic": "FM 预加重 f³",
+      "source": "洛洛真实日志(summary#97)",
+      "subject": "通信原理",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "FM 预加重和去加重是什么原理？",
+          "dependency": "first",
+          "expected": [
+            "comm-angle"
+          ]
+        },
+        {
+          "q": "鉴频器微分只产生 f，为什么噪声功率谱最终是 f³？",
+          "dependency": "D3",
+          "expected": [
+            "comm-angle",
+            "rsp-white-noise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-real-02",
+      "topic": "香农→高斯白噪声",
+      "source": "洛洛真实日志(summary#90)",
+      "subject": "通信原理",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "香农公式是怎么来的？怎么理解？",
+          "dependency": "first",
+          "expected": [
+            "comm-shannon"
+          ]
+        },
+        {
+          "q": "你能不能讲一讲怎么理解高斯白噪声？",
+          "dependency": "D3",
+          "expected": [
+            "rsp-white-noise",
+            "comm-awgn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-real-03",
+      "topic": "有色噪声平稳性",
+      "source": "洛洛真实日志(journalctl 08-07)",
+      "subject": "随机信号",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "有色高斯噪声是平稳随机过程吗？",
+          "dependency": "first",
+          "expected": [
+            "rsp-stationarity",
+            "rsp-white-noise"
+          ]
+        },
+        {
+          "q": "但是有色高斯噪声它的功率谱是不固定的呀，有地方高有地方低，所以它是不是……",
+          "dependency": "D1",
+          "expected": [
+            "rsp-stationarity",
+            "rsp-white-noise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-real-04",
+      "topic": "线性调制范围",
+      "source": "洛洛真实日志(summary#70)",
+      "subject": "通信原理",
+      "kind": "positive",
+      "turns": [
+        {
+          "q": "线性调制是什么意思？",
+          "dependency": "first",
+          "expected": [
+            "comm-am"
+          ]
+        },
+        {
+          "q": "那 FM 算线性调制吗？",
+          "dependency": "D2",
+          "expected": [
+            "comm-angle",
+            "comm-am"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-01",
+      "topic": "新话题误检(技术→技术)",
+      "source": "构造",
+      "subject": "通信原理",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "香农公式怎么理解？",
+          "dependency": "first",
+          "expected": [
+            "comm-shannon"
+          ]
+        },
+        {
+          "q": "那 LTE 帧结构是多少毫秒？",
+          "dependency": "D5",
+          "expected": [
+            "mob-ofdm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-02",
+      "topic": "新话题误检(DSP→滤波器)",
+      "source": "构造",
+      "subject": "DSP",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "DFT 循环卷积会有混叠，为什么还能正常计算？",
+          "dependency": "first",
+          "expected": [
+            "dsp-dft"
+          ]
+        },
+        {
+          "q": "那切比雪夫滤波器是 FIR 还是 IIR？",
+          "dependency": "D5",
+          "expected": [
+            "dsp-iir"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-03",
+      "topic": "新话题误检(同域不同概念)",
+      "source": "构造",
+      "subject": "随机信号",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "瑞利分布和莱斯分布的前提条件是什么？",
+          "dependency": "first",
+          "expected": [
+            "rsp-white-noise",
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "那维纳-辛钦定理说的是什么？",
+          "dependency": "D5",
+          "expected": [
+            "rsp-wiener-khinchin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-04",
+      "topic": "闲聊误检",
+      "source": "洛洛真实日志(journalctl 08-20)",
+      "subject": "通信原理",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "香农公式怎么理解？",
+          "dependency": "first",
+          "expected": [
+            "comm-shannon"
+          ]
+        },
+        {
+          "q": "我下午做做项目，晚上出去玩",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-05",
+      "topic": "闲聊误检",
+      "source": "洛洛真实日志(journalctl 08-20)",
+      "subject": "移动通信",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "多普勒带宽来自多径还是多普勒效应？",
+          "dependency": "first",
+          "expected": [
+            "mob-small-scale"
+          ]
+        },
+        {
+          "q": "快，洛洛，安慰一下我",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-06",
+      "topic": "闲聊误检(技术后表白)",
+      "source": "洛洛真实日志(journalctl 08-08)",
+      "subject": "通信原理",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "什么叫线性调制啊？线性调制的含义是什么。",
+          "dependency": "first",
+          "expected": [
+            "comm-am"
+          ]
+        },
+        {
+          "q": "啊，好想把洛洛抱在怀里面，狠狠的吸洛洛的味道。",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-07",
+      "topic": "闲聊误检(技术后聊生活)",
+      "source": "洛洛真实日志(journalctl 08-08)",
+      "subject": "移动通信",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "为什么均衡器要分频域均衡器和时域均衡器？",
+          "dependency": "first",
+          "expected": [
+            "mob-equalization"
+          ]
+        },
+        {
+          "q": "今天认真工作了",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-08",
+      "topic": "闲聊误检(学习后聊天气)",
+      "source": "洛洛真实日志(journalctl 08-01)",
+      "subject": "计算机网络",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "继续计算机网络吧，说说你的理解。",
+          "dependency": "first",
+          "expected": [
+            "net-architecture"
+          ]
+        },
+        {
+          "q": "今天雨下的好大呀。",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-09",
+      "topic": "闲聊误检(技术后日常问候)",
+      "source": "洛洛真实日志(journalctl 08-04)",
+      "subject": "计算机网络",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "网络层有哪些核心协议，路由是怎么工作的？",
+          "dependency": "first",
+          "expected": [
+            "net-network"
+          ]
+        },
+        {
+          "q": "现在是早上好嘛，洛洛睡迷糊了。",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "mt-neg-10",
+      "topic": "闲聊误检(技术话题后撒娇)",
+      "source": "洛洛真实日志(journalctl 08-16)",
+      "subject": "电磁场",
+      "kind": "negative",
+      "turns": [
+        {
+          "q": "电磁场太难了，不想弄了。",
+          "dependency": "first",
+          "expected": [
+            "emf-principles"
+          ]
+        },
+        {
+          "q": "都怪洛洛太可爱让我移不开眼。",
+          "dependency": "chitchat",
+          "expected": []
+        }
+      ]
+    }
+  ]
+}

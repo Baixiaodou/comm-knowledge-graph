@@ -1,12 +1,13 @@
 # 通信工程知识库 · Communication Knowledge Base v2
 
-> 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目：把通信工程课程知识组织成「节点 + 树层级 + Wiki 关联 + 思维链」三层结构，配套严谨的多模型评测，验证了一套优于朴素检索的方案。
+> 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目：把通信工程课程知识组织成「节点 + 树层级 + Wiki 关联 + 思维链」三层结构，配套严谨的多模型评测，验证了一套优于朴素检索的方案；并在其上实现**多轮追问记忆**，让"那反过来呢""补零呢"这类裸指代追问也能接续检索。
 
 <p align="center">
   <img src="https://img.shields.io/badge/节点-74-2b6cb0?style=flat-square" alt="nodes">
   <img src="https://img.shields.io/badge/思维链-31-2b6cb0?style=flat-square" alt="cot">
   <img src="https://img.shields.io/badge/连接-271-2b6cb0?style=flat-square" alt="links">
   <img src="https://img.shields.io/badge/benchmark-116_题-2f855a?style=flat-square" alt="benchmark">
+  <img src="https://img.shields.io/badge/多轮追问-44_组-16a085?style=flat-square" alt="multiturn">
   <img src="https://img.shields.io/badge/RAG-知识图谱-805ad5?style=flat-square" alt="rag">
   <img src="https://img.shields.io/badge/Streamlit-复习插件-ff4b4b?style=flat-square" alt="streamlit">
   <img src="https://img.shields.io/badge/license-MIT-9aa5b1?style=flat-square" alt="license">
@@ -25,12 +26,15 @@ flowchart LR
     A["📚 知识库本体<br/>74 节点 · 树 + Wiki + 思维链"] --> B["🔍 检索流水线<br/>TF-IDF → links → LLM 精挑"]
     B --> C["🧪 评测体系<br/>116 题 × 多模型 × 裁判"]
     A --> D["🧩 复习出题插件<br/>AI 出题 + 学习记录"]
+    B --> E["💬 多轮追问提升<br/>追问记忆 · 44 组题库"]
+    E -.->|验证与反馈| B
     C -.->|验证与反馈| A
 
     style A fill:#2b6cb0,color:#fff
     style B fill:#2f855a,color:#fff
     style C fill:#b7791f,color:#fff
     style D fill:#805ad5,color:#fff
+    style E fill:#16a085,color:#fff
 ```
 
 ---
@@ -50,6 +54,8 @@ flowchart LR
 > [!NOTE]
 > 8B 与 GLM 在反直觉难题集的裸跑数据因 API 限流缺失，无法计算合并后整体增益；表中为普通题（35 题）口径的相对提升。
 
+**多轮追问**（44 组追问题库，同一检索流水线 ± 追问记忆）：追问记忆对**裸指代追问增益 +29%**（42% → 71%），闲聊误检率 0——详见 [💬 多轮追问提升](#多轮追问提升)。
+
 ---
 
 ## 📑 目录
@@ -65,6 +71,7 @@ flowchart LR
 - [📁 项目结构](#项目结构)
 - [🚀 快速开始](#快速开始)
 - [🧩 复习出题插件](#复习出题插件)
+- [💬 多轮追问提升](#多轮追问提升)
 - [📄 设计文档](#设计文档)
 
 ---
@@ -458,15 +465,19 @@ knowledge-base/
 │   └── _meta/tree.json      # 树结构索引（build_tree.py 自动生成）
 ├── benchmark/               # 评测体系
 │   ├── questions_full.json  # 116 题完整题库
+│   ├── multiturn_questions.json  # 44 组多轮追问题库
 │   ├── 评测报告_*.html      # 可视化评测报告
 │   └── results/             # 评测原始数据（jsonl）
 ├── tools/                   # 工具脚本
 │   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分）
+│   ├── eval_followup.py     # 多轮追问评测（baseline vs 插件）
+│   ├── multiturn_rag/
+│   │   └── followup_rag.py  # 多轮追问记忆插件（FollowupRAG + Session）
 │   ├── test_top34.py        # 检索方案对比测试
 │   ├── build_tree.py        # 生成树结构索引
 │   └── kb_lint.py           # 知识库完整性校验
 ├── review/                  # 复习出题插件（Streamlit，只读知识库）
-└── docs/                    # 设计文档（01-06）
+└── docs/                    # 设计文档（01-07）
 ```
 
 ---
@@ -523,12 +534,56 @@ streamlit run app.py
 
 ---
 
+## 💬 多轮追问提升
+
+单轮检索每轮独立、不带上一轮上下文；真实问答中用户会连续追问，尤其**裸指代追问**（"那反过来呢""补零呢"）几乎不含信息词，独立检索必然失焦。本项目在既有检索流水线上实现**追问记忆**，并用 44 组 / 156 轮追问题库实测验证。
+
+```mermaid
+flowchart LR
+    Q["当前问题"] --> F{"闲聊前置过滤<br/>短句+无技术词+非追问?"}
+    F -->|是| S["不检索 · 闲聊回复"]
+    F -->|否| H{"追问判定<br/>那/它/呢 强指代?"}
+    H -->|否| N["独立检索<br/>TF-IDF → gate"]
+    H -->|是| M["历史优先并入<br/>上一轮节点 + gate 带上下文"]
+    M --> G["注入答题"]
+    N --> G
+    style Q fill:#805ad5,color:#fff
+    style F fill:#b7791f,color:#fff
+    style H fill:#b7791f,color:#fff
+    style M fill:#16a085,color:#fff
+    style N fill:#2f855a,color:#fff
+    style G fill:#2b6cb0,color:#fff
+    style S fill:#95a5a6,color:#fff
+```
+
+### 两个核心结论
+
+**① 追问记忆对裸指代（D1）追问有效**——31 条 D1 实测：baseline 42% → 插件 71%，**增益 +29%**；追问档合计 +9.8%。D2/D3/D4 基线本就高（天花板效应），增益小是正常。
+
+**② 误判代价不对称 → 判定可放宽**——追问漏判低代价（用户重问一次）；新话题误判追问实测无害（历史是候选增强，gate 仍选对新话题节点）；**闲聊误检必须严格，实测误检率 0**（前置过滤已关死）。故追问判定"宁松勿错"、闲聊判定"宁严勿漏"。
+
+> [!IMPORTANT]
+> **踩坑记录**：曾尝试"信号 + 与上轮余弦确认"的复合方法，实测净增益从 +9.8% 掉到 +2.0%——D1 裸指代与上轮词面本就不重合，余弦确认误杀真追问。**最终只凭强指代信号带历史，不做余弦确认。**
+
+### 文件
+
+| 文件 | 说明 |
+|:---|:---|
+| `benchmark/multiturn_questions.json` | 追问题库（44 组 / 156 轮，分档 + expected_nodes） |
+| `tools/multiturn_rag/followup_rag.py` | 追问记忆插件（`FollowupRAG` 判定 + `Session` 状态，依赖注入可对接线上） |
+| `tools/eval_followup.py` | 评测脚本（baseline vs 插件，分档指标，可跑多变体对比） |
+| `benchmark/README_multiturn.md` | 完整评测说明与 v1.0→v1.4 演进记录 |
+| `docs/07-多轮追问技术报告.md` | 技术报告（两个核心结论 + 取舍） |
+
+---
+
 ## 📄 设计文档
 
 | 文档 | 内容 |
 |------|------|
 | `docs/01-设计总纲.md` ~ `05-任务清单.md` | 设计阶段的方法论与规划 |
 | `docs/06-项目归档总结.md` | 全部实验数据、踩坑记录与核心洞察 |
+| `docs/07-多轮追问技术报告.md` | 多轮追问提升：两个核心结论 + 关键取舍 |
 | `benchmark/评测报告_*.html` | 可视化报告（时间线、方案演进、完整实验史） |
 
 ---
