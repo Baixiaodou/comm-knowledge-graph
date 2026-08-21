@@ -25,35 +25,23 @@ import re
 import sys
 import time
 from collections import defaultdict
-from math import sqrt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import kb_benchmark as kb  # 复用 _tokenize / _tfidf_similarity / _load_node_meta / load_env
+from multiturn_rag.followup_rag import FollowupRAG  # 追问判定唯一实现（与线上同源）
 
 BASE = kb.BASE
 QUESTIONS_PATH = os.path.join(BASE, "benchmark", "multiturn_questions.json")
 RESULT_DIR = os.path.join(BASE, "benchmark", "results")
 
 # ── 可调旋钮（追问插件的超参，集中暴露，评测调参改这里）──────────────
-SIM_THRESHOLD = 0.15    # 追问判定：当前问题 vs 上一轮问题的 TF-IDF 余弦阈值
+SIM_THRESHOLD = 0.15    # 追问判定：当前问题 vs 上一轮问题的 TF-IDF 余弦阈值（打印参考）
 REF_BOOST_SIM = 0.03    # 含指代词/连接词时，相似度门槛放宽到该值
 SHORT_LEN = 15          # 短追问字数阈值（≤此字数+指代词 → 强判追问）
-HIST_WINDOW = 1         # 历史节点窗口（v1 只取上一轮注入节点）
 CAND_CAP = 10           # 候选池封顶（TF-IDF top + 历史节点合并后）
-FLOOR_WEIGHT = 0.1      # 历史节点并入时的保底权重（不压制 TF-IDF 强命中）
 TFIDF_TOP = 5           # TF-IDF 初筛取前 K（历史节点在其上补齐）
-
-REF_WORDS = ("那", "它", "他", "她", "这个", "这样", "这些", "那些", "但", "但是",
-             "为什么", "怎么", "再", "还有", "然后", "所以", "反过来", "往下", "继续", "呢")
-
-# 强指代/省略信号：命中才触发"带历史"（区别于广义追问信号，避免 D2/D3 被历史干扰）
-STRONG_REF = ("那", "它", "他", "她", "这个", "这样", "这些", "那些", "反过来", "往下", "继续", "还有呢", "然后呢")
-
-# 语气词/无意义字（相似度计算时剔除，避免"呢/啊/的"污染 TF 余弦）
-PARTICLES = "呢啊呀吧吗嘛哈哦啦唉哟哇咦嘿嗯么的了"
-# 复合方法：need_history 信号命中后，与上轮余弦 > 该值才算"真追问"（拦"那LTE帧结构"这类换话题误触发）
-COS_CONFIRM = 0.10
+COS_CONFIRM = 0.10      # 复合变体（compound/clean_compound）的余弦确认阈值
 
 # gate 支持的模型（复用 kb 的 MODELS）
 GATE_MODELS = {m["name"]: m for m in kb.MODELS}
@@ -62,91 +50,9 @@ GATE_MODELS = {m["name"]: m for m in kb.MODELS}
 TECH_RE = re.compile(
     r"(FFT|DFT|DTFT|卷积|滤波|采样|混叠|频谱|信号|噪声|带宽|信噪比|衰落|多普勒|瑞利|莱斯|信道|编码|OFDM|调频|FM|AM|DSB|SSB|相位|频域|时域|功率|能量|香农|交织|循环码|频率|调制|解调|正交|MIMO|天线|电磁|傅里叶|拉普拉斯|Z变换|冲激|窗函数|吉布斯|奈奎斯特|抽取|内插|上采样|下采样|采样率|分辨率|线性|因果|稳定|极点|零点|反馈|双线性|预畸变|群时延|码间串扰|幅度|相位失真|FIR|IIR|切比雪夫|巴特沃斯|高斯|随机|包络|相干|多径|直射|反射|路径损耗|生成多项式|纠错|检错|冗余|频谱泄露|栅栏效应|加窗|主瓣|旁瓣|过渡带|计算机网络|OSI|TCP|IP|HTTP|LTE|均衡器|智能体|模型|GPU|显存|量化|复习|面试|保研)")
 
-
-def is_chitchat(q: str, prev_q: str, variant: str = "current") -> bool:
-    """闲聊前置过滤（模拟线上 _is_short_chat + 增强）：
-    短句 + 无技术词 + 非裸指代追问 → 视为闲聊，不触发检索（注入 []）。
-    """
-    q = q.strip()
-    if not q or len(q) > 15:
-        return False  # 长句不拦（可能有信息量）
-    if TECH_RE.search(q):
-        return False  # 含技术词不拦
-    if need_history(q, prev_q, variant):
-        return False  # 裸指代/省略式追问（"补零呢"）不拦，走追问逻辑
-    return True
-
-
-# ── 文本相似度（两句话 TF 余弦）──────────────────────────────────────
-def _cos_between(a: str, b: str) -> float:
-    ta, tb = defaultdict(int), defaultdict(int)
-    for t in kb._tokenize(a):
-        ta[t] += 1
-    for t in kb._tokenize(b):
-        tb[t] += 1
-    common = set(ta) & set(tb)
-    dot = sum(ta[t] * tb[t] for t in common)
-    na = sqrt(sum(v * v for v in ta.values())) or 1.0
-    nb = sqrt(sum(v * v for v in tb.values())) or 1.0
-    return dot / (na * nb)
-
-
-def strip_particles(text: str) -> str:
-    """剔除语气词与常用标点，用于相似度计算的干净文本"""
-    return re.sub(f"[{PARTICLES}？?。！!，,、～~…·《》【】\"']", "", text)
-
-
-def _cos_clean(a: str, b: str) -> float:
-    """去语气词后的 TF 余弦（更准，不被"呢/啊/的"污染）"""
-    return _cos_between(strip_particles(a), strip_particles(b))
-
-
-def is_followup(cur_q: str, prev_q: str) -> bool:
-    """v1 追问判定：指代词信号 + TF-IDF 相似度。无上一轮 → False"""
-    if not prev_q:
-        return False
-    sim = _cos_between(cur_q, prev_q)
-    has_ref = any(w in cur_q for w in REF_WORDS)
-    short = len(cur_q) <= SHORT_LEN
-    if has_ref and (sim > REF_BOOST_SIM or short):
-        return True
-    return sim > SIM_THRESHOLD
-
-
-def need_history(cur_q: str, prev_q: str, variant: str = "current") -> bool:
-    """是否需要带历史（比 is_followup 更严格，只对强指代/省略式追问为 True）。
-
-    关键设计：D1 裸指代/省略式追问（"那反过来呢""补零呢"）TF-IDF 不可靠，历史才是答案；
-    D2/D3 短追问（"频谱泄露根源是什么"）本身信息完整，带历史反而被上一轮节点带偏。
-    故只对强指代 + 短 / 呢结尾 / 强指代+高相似 触发带历史。
-
-    variant:
-      current        原逻辑（信号命中即带历史）
-      compound       信号命中 + 与上轮余弦 > COS_CONFIRM（拦"那LTE帧结构"换话题误触发）
-      clean_compound 同 compound，但余弦用去语气词后的文本（更准）
-    """
-    if not prev_q:
-        return False
-    q = cur_q.strip()
-    has_strong = any(w in cur_q for w in STRONG_REF)
-    ends_ne = q.endswith("呢") or q.endswith("呢？") or q.endswith("呢。")
-    short = len(q) <= SHORT_LEN
-    # 省略式追问（"补零呢？"）或 强指代短追问（"那混叠呢"）
-    if ends_ne or (has_strong and short):
-        signal = True
-    # 强指代 + 较高相似（"那反过来不做周期延拓会怎样" 这类中等长度）
-    elif has_strong and _cos_between(cur_q, prev_q) > REF_BOOST_SIM:
-        signal = True
-    else:
-        signal = False
-    if not signal:
-        return False
-    # 复合确认：与上轮余弦 > COS_CONFIRM，否则视为换话题（拒绝带历史）
-    if variant in ("compound", "clean_compound"):
-        sim = _cos_clean(cur_q, prev_q) if variant == "clean_compound" else _cos_between(cur_q, prev_q)
-        if sim <= COS_CONFIRM:
-            return False
-    return True
+# 追问判定插件（唯一实现来源：tools/multiturn_rag/followup_rag.py）
+_plugin = FollowupRAG(tech_re=TECH_RE, short_len=SHORT_LEN,
+                      ref_boost_sim=REF_BOOST_SIM, cos_confirm=COS_CONFIRM)
 
 
 # ── 检索核心 ──────────────────────────────────────────────────────────
@@ -270,7 +176,7 @@ def run_baseline(dialogues, retr, no_gate=False):
         prev_q = None
         for i, t in enumerate(d["turns"]):
             q = t["q"]
-            if is_chitchat(q, prev_q):
+            if _plugin.should_skip(q, prev_q):
                 injected = []
             else:
                 cands = retr.tfidf_candidates(q)
@@ -297,11 +203,11 @@ def run_followup(dialogues, retr, no_gate=False, variant="current"):
         prev_ids = []
         for i, t in enumerate(d["turns"]):
             q = t["q"]
-            if is_chitchat(q, prev_q, variant):
+            if _plugin.should_skip(q, prev_q, variant):
                 injected = []
                 nh = False
             else:
-                nh = need_history(q, prev_q, variant)
+                nh = _plugin.need_history(q, prev_q, variant)
                 tfidf_ids = retr.tfidf_candidates(q)
                 if nh:
                     # 强指代/省略式追问：历史优先（TF-IDF 对裸指代不可靠）
@@ -490,7 +396,7 @@ def main():
     retr = Retriever(model_cfg)
     print(f"题库: {len(dialogues)} 组 | gate 模型: {args.model} | no_gate={args.no_gate} | variants={variants}", flush=True)
     print(f"旋钮: sim_threshold={SIM_THRESHOLD} ref_boost={REF_BOOST_SIM} short_len={SHORT_LEN} "
-          f"cand_cap={CAND_CAP} floor={FLOOR_WEIGHT} tfidf_top={TFIDF_TOP} cos_confirm={COS_CONFIRM}", flush=True)
+          f"cand_cap={CAND_CAP} tfidf_top={TFIDF_TOP} cos_confirm={COS_CONFIRM}", flush=True)
 
     baseline, followup_map = [], {}
     if args.mode in ("baseline", "both"):

@@ -41,18 +41,21 @@ class FollowupRAG:
     # 语气词/无意义字（相似度计算时剔除，避免"呢/啊/的"污染余弦）
     PARTICLES = "呢啊呀吧吗嘛哈哦啦唉哟哇咦嘿嗯么的了"
 
-    def __init__(self, tech_re=None, tokenize_fn=None, short_len=15, ref_boost_sim=0.03):
+    def __init__(self, tech_re=None, tokenize_fn=None, short_len=15, ref_boost_sim=0.03,
+                 cos_confirm=0.10):
         """
         tech_re: 技术词正则（编译好的 re.Pattern）。用于闲聊过滤——含技术词不拦。
                  线上可直接传 node_retriever 的关键词模式；没有则传 None（视为全不拦）。
         tokenize_fn: 中文分词/切词函数（用于 TF 余弦）。缺省用字符 2-gram（与项目 TF-IDF 一致）。
         short_len: 短追问字数阈值（≤此字数 + 指代 → 强判追问）。
         ref_boost_sim: 含强指代时相似度门槛放宽到该值。
+        cos_confirm: 复合变体（compound/clean_compound）的余弦确认阈值。
         """
         self.tech_re = tech_re
         self._tokenize = tokenize_fn or self._default_tokenize
         self.short_len = short_len
         self.ref_boost_sim = ref_boost_sim
+        self.cos_confirm = cos_confirm
 
     # ── 分词与相似度 ─────────────────────────────────────────────────
     @staticmethod
@@ -87,25 +90,30 @@ class FollowupRAG:
         return dot / (na * nb)
 
     # ── ① 闲聊前置过滤（模拟线上 _is_short_chat 的增强版）──────────
-    def should_skip(self, q, prev_q):
+    def should_skip(self, q, prev_q, variant="current"):
         """短句 + 无技术词 + 非裸指代追问 → 视为闲聊，不触发检索"""
         q = q.strip()
         if not q or len(q) > 15:
             return False                      # 长句不拦（可能有信息量）
         if self.tech_re and self.tech_re.search(q):
             return False                      # 含技术词不拦
-        if self.need_history(q, prev_q):
+        if self.need_history(q, prev_q, variant):
             return False                      # 裸指代/省略式追问不拦
         return True
 
     # ── ② 追问判定（是否带历史）────────────────────────────────────
-    def need_history(self, cur_q, prev_q):
+    def need_history(self, cur_q, prev_q, variant="current"):
         """强指代/省略式追问才带历史。
 
         D1 裸指代（"那反过来呢""补零呢"）TF-IDF 不可靠，历史才是答案；
         D2/D3 短追问（"频谱泄露根源是什么"）本身信息完整，不带历史（避免被带偏）。
-        注意：不做"与上轮余弦确认"——实测（benchmark v1.4）余弦确认会把 D1 裸指代
-        误杀（裸指代与上轮词面本就不重合），净增益从 +9.8% 掉到 +2.0%。
+
+        variant（评测实验变体）：
+          current        原逻辑（信号命中即带历史）——生产默认
+          compound       信号命中 + 与上轮余弦 > cos_confirm
+          clean_compound 同 compound，但余弦用去语气词后的文本
+        注意：compound 系实测（benchmark v1.4）会误杀 D1 裸指代（裸指代与上轮词面
+        本就不重合），净增益从 +9.8% 掉到 +2.0%——仅作实验对比，勿用于生产。
         """
         if not prev_q:
             return False
@@ -114,10 +122,19 @@ class FollowupRAG:
         ends_ne = q.endswith("呢") or q.endswith("呢？") or q.endswith("呢。")
         short = len(q) <= self.short_len
         if ends_ne or (has_strong and short):
-            return True
-        if has_strong and self._cos(cur_q, prev_q) > self.ref_boost_sim:
-            return True
-        return False
+            signal = True
+        elif has_strong and self._cos(cur_q, prev_q) > self.ref_boost_sim:
+            signal = True
+        else:
+            signal = False
+        if not signal:
+            return False
+        # 复合确认（仅实验变体）：与上轮余弦 > cos_confirm
+        if variant in ("compound", "clean_compound"):
+            sim = self._cos(cur_q, prev_q, clean=(variant == "clean_compound"))
+            if sim <= self.cos_confirm:
+                return False
+        return True
 
     # ── ③ 候选池合并 + 上下文构建 ──────────────────────────────────
     @staticmethod
