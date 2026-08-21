@@ -15,6 +15,9 @@ env/
 # 环境变量（含 API key，切勿提交）
 .env
 tools/.env
+tools/.env.*
+*.key
+*.pem
 
 # IDE
 .idea/
@@ -34,5 +37,5 @@ logs/
 review/data/
 *.db
 
-# 多轮追问评测原始结果（题库+脚本可复现，原始 json 不入库）
+# 评测原始结果（题库+脚本可复现，原始 json 不入库）
 benchmark/results/
