@@ -92,7 +92,7 @@ def update_readme(s):
     def sub(pattern, repl, desc, flags=0):
         nonlocal text
         new, n = re.subn(pattern, repl, text, count=1, flags=flags)
-        if n:
+        if n and new != text:  # 同值替换不计改动（真幂等）
             changes.append(desc)
             text = new
 
