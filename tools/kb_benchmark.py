@@ -206,7 +206,7 @@ def select_nodes(model_cfg, question, tree_index, max_retries=2):
 
 问题：{question}"""
     extra = {}
-    if re.search(r"qwen3|GLM-5|MiniMax|Kimi-K2", model_cfg["name"], re.I):
+    if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
         extra["extra_body"] = {"enable_thinking": False}
     for attempt in range(max_retries):
         try:
@@ -357,7 +357,7 @@ def select_nodes_c(model_cfg, question, tree_index, top_k=10, max_retries=2):
 
 问题：{question}"""
     extra = {}
-    if re.search(r"qwen3|GLM-5|MiniMax|Kimi-K2", model_cfg["name"], re.I):
+    if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
         extra["extra_body"] = {"enable_thinking": False}
     for attempt in range(max_retries):
         try:
@@ -415,11 +415,12 @@ def _load_node_meta():
 
 
 def select_nodes_d(model_cfg, question, tree_index, top_k=10, max_retries=2):
-    """最终检索策略：程序初筛（排除 hub/root）+ 模型精挑。
+    """检索方案 D（历史方案）：程序初筛（排除 hub/root）+ 模型精挑。
 
     1. TF-IDF 初筛：排除 hub（分类文件夹）/root，只留 core/leaf（真正知识点），取 top-K
     2. 模型精挑：从候选中选 2-3 个节点
-    （不做 links 扩展：实测选节点环节零收益、注入环节不划算）
+    （注：这是方案演进中的中间方案，已由 select_nodes_final 取代——最终方案是
+    top-3 + links 扩展 + 精挑，见 README「检索方案研究」；保留本函数供历史复现）
     """
     import yaml
     doc_texts = _all_node_texts()
@@ -460,7 +461,7 @@ def select_nodes_d(model_cfg, question, tree_index, top_k=10, max_retries=2):
 
 问题：{question}"""
     extra = {}
-    if re.search(r"qwen3|GLM-5|MiniMax|Kimi-K2", model_cfg["name"], re.I):
+    if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
         extra["extra_body"] = {"enable_thinking": False}
     for attempt in range(max_retries):
         try:
@@ -492,12 +493,97 @@ def select_nodes_d(model_cfg, question, tree_index, top_k=10, max_retries=2):
     return cand[:3]
 
 
+def _pick_node_ids(model_cfg, question, cand_ids, max_retries=2):
+    """从候选节点 id 中 LLM 精挑 2-3 个（候选目录构建 + JSON/正则解析 + 兜底）。
+    供 select_nodes_d / select_nodes_final 共用，避免精挑逻辑多处复制。
+    """
+    import yaml
+    cand_lines = []
+    for f in sorted(os.listdir(NODES_DIR)):
+        if not f.endswith(".md"):
+            continue
+        with open(os.path.join(NODES_DIR, f), encoding="utf-8") as fh:
+            text = fh.read()
+        m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.DOTALL)
+        if not m:
+            continue
+        try:
+            fm = yaml.safe_load(m.group(1)) or {}
+        except Exception:
+            continue
+        if fm.get("id") in cand_ids:
+            cand_lines.append(f"- {fm.get('title')} ({fm.get('id')}): {fm.get('summary', '')[:60]}")
+    cand_index = "\n".join(cand_lines)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    prompt = f"""你是通信工程专业的学生。下面是程序预筛选出的候选知识点（已按相关度排序）：
+
+{cand_index}
+
+现在要回答一个问题。请从候选中选 2-3 个最相关的节点，只输出节点 id 列表，格式如 ["comm-am","comm-rf-mod"]，不要输出任何其他内容。
+
+问题：{question}"""
+    extra = {}
+    if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
+        extra["extra_body"] = {"enable_thinking": False}
+    for attempt in range(max_retries):
+        try:
+            r = client.chat.completions.create(
+                model=model_cfg["name"],
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=200,
+                temperature=0,
+                **extra,
+            )
+            text = r.choices[0].message.content.strip()
+            m = re.search(r"\[.*?\]", text, re.DOTALL)
+            if m:
+                try:
+                    ids = json.loads(m.group(0))
+                    result = [i for i in ids if isinstance(i, str) and i in cand_ids][:3]
+                    if result:
+                        return result
+                except Exception:
+                    pass
+            found = [i for i in re.findall(r"((?:comm|dsp|mob|rsp|emf|net)-[\w-]+)", text) if i in cand_ids]
+            if found:
+                return found[:3]
+            return cand_ids[:3]
+        except Exception:
+            if attempt == max_retries - 1:
+                return cand_ids[:3]
+            time.sleep(1)
+    return cand_ids[:3]
+
+
+def select_nodes_final(model_cfg, question, top_k=3, max_retries=2):
+    """最终检索方案（benchmark 验证：116 题召回 79.1%）：top-K + links 扩展 + LLM 精挑。
+
+    1. TF-IDF 初筛（排除 root/hub，只留 core/leaf），取 top-K（默认 3）
+    2. links 扩展：top-K 节点的 links 邻居（core/leaf）并入候选（不截断）
+       ——补回"关键词不重合但语义相关"的节点，top-K 越窄 links 价值越大
+    3. LLM 从完整候选精挑 2-3 个
+    即 test_top34.py method_links 的正式实现（原实现仅存在于实验脚本）。
+    """
+    doc_texts = _all_node_texts()
+    meta = _load_node_meta()
+    scores = _tfidf_similarity(question, doc_texts)
+    ranked = [nid for nid, _ in sorted(scores.items(), key=lambda x: -x[1])
+              if meta.get(nid, {}).get("type") in ("core", "leaf")]
+    topk = ranked[:top_k]
+    cand = list(topk)
+    for nid in topk:
+        for nb in meta.get(nid, {}).get("links", []):
+            if meta.get(nb, {}).get("type") in ("core", "leaf") and nb not in cand:
+                cand.append(nb)
+    return _pick_node_ids(model_cfg, question, cand, max_retries)
+
+
 # ── 模型调用 ─────────────────────────────────────────────────────────
 def ask_model(model_cfg, system_prompt, question, max_retries=2):
     client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
     extra = {}
     # qwen3 系列需要 enable_thinking=false（非流式）
-    if re.search(r"qwen3|GLM-5|MiniMax|Kimi-K2", model_cfg["name"], re.I):
+    if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
         extra["extra_body"] = {"enable_thinking": False}
     for attempt in range(max_retries):
         try:
@@ -556,7 +642,14 @@ def judge_answer(question, std_answer, model_name, answer):
         text = r.choices[0].message.content.strip()
         m = re.search(r"\{.*\}", text, re.DOTALL)
         if m:
-            return json.loads(m.group(0))
+            try:
+                data = json.loads(m.group(0))
+                # 类型校验：score 必须是 int/float，防裁判输出异常污染统计
+                if isinstance(data, dict) and isinstance(data.get("score"), (int, float)):
+                    return data
+                return {"score": -1, "comment": "裁判输出 score 类型异常"}
+            except Exception:
+                return {"score": -1, "comment": "裁判输出 JSON 解析失败"}
         return {"score": -1, "comment": "裁判输出格式异常"}
     except Exception as e:
         return {"score": -1, "comment": f"裁判异常: {str(e)[:100]}"}
@@ -570,7 +663,8 @@ def main():
     parser.add_argument("--models", nargs="*", help="只跑指定模型名")
     parser.add_argument("--no-judge", action="store_true", help="只跑答案不打分")
     parser.add_argument("--questions", default="", help="指定题库 json 路径（默认 benchmark/questions.json）")
-    parser.add_argument("--method", default="A", help="选节点方式：A=模型自主 B=程序预筛 C=混合")
+    parser.add_argument("--method", default="F",
+                        help="选节点方式：A=模型自主 B=程序预筛 C=混合 D=树+Wiki(历史) F=最终方案(top3+links+精挑)")
     args = parser.parse_args()
 
     os.makedirs(RESULT_DIR, exist_ok=True)
@@ -603,13 +697,15 @@ def main():
             print(f"\n=== {label} ===", flush=True)
             for qi, q in enumerate(questions):
                 if mode == "with_kb":
-                    # 第一轮：选相关节点（A 模型自主 / B 程序预筛 / C 混合 / D 树+Wiki）
+                    # 第一轮：选相关节点（A 模型自主 / B 程序预筛 / C 混合 / D 树+Wiki / F final）
                     if args.method == "B":
                         nids = select_nodes_b(q["question"], tree_index)
                     elif args.method == "C":
                         nids = select_nodes_c(model, q["question"], tree_index)
                     elif args.method == "D":
                         nids = select_nodes_d(model, q["question"], tree_index)
+                    elif args.method == "F":
+                        nids = select_nodes_final(q["question"])
                     else:
                         nids = select_nodes(model, q["question"], tree_index)
                     # 第二轮：注入选中节点内容回答
@@ -630,13 +726,23 @@ def main():
                     "selected_nodes": nids,
                     "expected_nodes": q.get("expected_nodes", []),
                 }
-                if not args.no_judge:
+                # 测量卫生：选节点失败/无内容 → 标记降级（裸跑成绩不得冒充 +知识库）
+                if mode == "with_kb" and not nodes_content:
+                    record["degraded"] = True
+                # 测量卫生：调用失败（[ERROR] 占位）→ 不送裁判打分（记 -1 由汇总剔除）
+                call_failed = ans.startswith("[ERROR]")
+                if not args.no_judge and not call_failed:
                     j = judge_answer(q["question"], q["answer"], model["name"], ans)
                     record["judge_score"] = j.get("score", -1)
                     record["judge_comment"] = j.get("comment", "")
                     print(f"  [{q['id']}] L{q['level']} 分={record['judge_score']}", flush=True)
                 else:
-                    print(f"  [{q['id']}] L{q['level']} 已答", flush=True)
+                    if call_failed:
+                        record["judge_score"] = -1
+                        record["judge_comment"] = "调用失败(未打分)"
+                        print(f"  [{q['id']}] L{q['level']} 调用失败，跳过打分", flush=True)
+                    else:
+                        print(f"  [{q['id']}] L{q['level']} 已答", flush=True)
                 results.append(record)
                 # 实时 append 到文件
                 with open(raw_path, "a", encoding="utf-8") as f:

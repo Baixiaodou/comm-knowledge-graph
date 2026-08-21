@@ -227,7 +227,7 @@ class Retriever:
 当前问题：{q}"""
 
         extra = {}
-        if re.search(r"qwen3|GLM-5|MiniMax|Kimi-K2", self.model["name"], re.I):
+        if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", self.model["name"], re.I):
             extra["extra_body"] = {"enable_thinking": False}
         client = kb.OpenAI(api_key=self.model["key"], base_url=self.model["base_url"], timeout=90)
         for attempt in range(2):
