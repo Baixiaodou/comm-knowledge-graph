@@ -469,13 +469,14 @@ knowledge-base/
 │   ├── 评测报告_*.html      # 可视化评测报告
 │   └── results/             # 评测原始数据（jsonl）
 ├── tools/                   # 工具脚本
-│   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分）
+│   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分，最终方案 select_nodes_final）
 │   ├── eval_followup.py     # 多轮追问评测（baseline vs 插件）
 │   ├── multiturn_rag/
 │   │   └── followup_rag.py  # 多轮追问记忆插件（FollowupRAG + Session）
-│   ├── test_top34.py        # 检索方案对比测试
+│   ├── update_readme_stats.py  # 自动同步 README 知识库统计
 │   ├── build_tree.py        # 生成树结构索引
-│   └── kb_lint.py           # 知识库完整性校验
+│   ├── kb_lint.py           # 知识库完整性校验
+│   └── archive/             # 历史实验脚本/题库（归档，仅供参考）
 ├── review/                  # 复习出题插件（Streamlit，只读知识库）
 └── docs/                    # 设计文档（01-07）
 ```
@@ -485,14 +486,23 @@ knowledge-base/
 ## 🚀 快速开始
 
 ```bash
+# 0. 安装依赖（LLM 调用 + YAML 解析）
+pip install -r tools/requirements.txt
+
 # 1. 校验知识库完整性
 python tools/kb_lint.py
 
-# 2. 生成树结构索引
+# 2. 生成树结构索引（新增/修改节点后）
 python tools/build_tree.py
 
-# 3. 跑评测（需配置 API key，见 tools/.env.example）
-python tools/test_top34.py
+# 3. 同步 README 知识库统计（新增/删除节点后）
+python tools/update_readme_stats.py
+
+# 4. 跑单轮评测（需配置 API key，见 tools/.env.example）
+python tools/kb_benchmark.py --limit 5   # 先跑 5 题测试；全量去掉 --limit
+
+# 5. 跑多轮追问评测（对比 baseline vs 插件）
+python tools/eval_followup.py --limit 5
 ```
 
 ---
