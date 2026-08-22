@@ -197,7 +197,7 @@ def load_nodes_by_ids(nids) -> str:
 
 def select_nodes(model_cfg, question, tree_index, max_retries=2):
     """第一轮：让模型从树目录里选出 2-3 个相关节点 id"""
-    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=180)
     prompt = f"""你是通信工程专业的学生。下面是你的知识库目录（树结构 + 每个知识点的摘要）：
 
 {tree_index}
@@ -348,7 +348,7 @@ def select_nodes_c(model_cfg, question, tree_index, top_k=10, max_retries=2):
         if fm.get("id") in ranked:
             cand_lines.append(f"- {fm.get('title')} ({fm.get('id')}): {fm.get('summary', '')[:60]}")
     cand_index = "\n".join(cand_lines)
-    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=180)
     prompt = f"""你是通信工程专业的学生。下面是程序预筛选出的候选知识点（已按相关度排序）：
 
 {cand_index}
@@ -452,7 +452,7 @@ def select_nodes_d(model_cfg, question, tree_index, top_k=10, max_retries=2):
     cand_index = "\n".join(cand_lines)
 
     # 4. 模型精挑 2-3 个
-    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=180)
     prompt = f"""你是通信工程专业的学生。下面是程序预筛选出的候选知识点（已按相关度排序）：
  
 {cand_index}
@@ -514,7 +514,7 @@ def _pick_node_ids(model_cfg, question, cand_ids, max_retries=2):
         if fm.get("id") in cand_ids:
             cand_lines.append(f"- {fm.get('title')} ({fm.get('id')}): {fm.get('summary', '')[:60]}")
     cand_index = "\n".join(cand_lines)
-    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=180)
     prompt = f"""你是通信工程专业的学生。下面是程序预筛选出的候选知识点（已按相关度排序）：
 
 {cand_index}
@@ -580,7 +580,7 @@ def select_nodes_final(model_cfg, question, top_k=3, max_retries=2):
 
 # ── 模型调用 ─────────────────────────────────────────────────────────
 def ask_model(model_cfg, system_prompt, question, max_retries=2):
-    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=90)
+    client = OpenAI(api_key=model_cfg["key"], base_url=model_cfg["base_url"], timeout=180)
     extra = {}
     # qwen3 系列需要 enable_thinking=false（非流式）
     if re.search(r"qwen3|GLM-[45]|MiniMax|Kimi-K2", model_cfg["name"], re.I):
@@ -607,7 +607,7 @@ def ask_model(model_cfg, system_prompt, question, max_retries=2):
 
 def judge_answer(question, std_answer, model_name, answer):
     """Qwen-Max 裁判：基于标准答案打分 0-10，返回 (分数, 评语)"""
-    client = OpenAI(api_key=JUDGE["key"], base_url=JUDGE["base_url"], timeout=90)
+    client = OpenAI(api_key=JUDGE["key"], base_url=JUDGE["base_url"], timeout=180)
     prompt = f"""你是通信原理课程的资深面试官，请严格按标准答案给考生答案打分。评分必须拉开差距，宁严勿松，尤其对错误和不完整要重扣。
 
 【题目】{question}
@@ -660,15 +660,20 @@ def main():
     load_env()
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0, help="只跑前 N 题（0=全部）")
+    parser.add_argument("--start", type=int, default=0, help="从第 N 题开始（0=开头，配合 --limit 做分段并行）")
     parser.add_argument("--models", nargs="*", help="只跑指定模型名")
     parser.add_argument("--no-judge", action="store_true", help="只跑答案不打分")
     parser.add_argument("--questions", default="", help="指定题库 json 路径（默认 benchmark/questions.json）")
     parser.add_argument("--method", default="F",
                         help="选节点方式：A=模型自主 B=程序预筛 C=混合 D=树+Wiki(历史) F=最终方案(top3+links+精挑)")
+    parser.add_argument("--modes", nargs="*", default=["bare", "with_kb"],
+                        help="只跑指定模式（bare/with_kb），默认两个都跑（用于多 key 并行拆分）")
     args = parser.parse_args()
 
     os.makedirs(RESULT_DIR, exist_ok=True)
     questions = load_questions(args.questions or None)
+    if args.start > 0:
+        questions = questions[args.start:]
     if args.limit > 0:
         questions = questions[: args.limit]
 
@@ -692,7 +697,7 @@ def main():
         if not model["key"]:
             print(f"[跳过] {model['name']}: 无 API key", flush=True)
             continue
-        for mode in ["bare", "with_kb"]:
+        for mode in args.modes:
             label = f"{model['name']} [{mode}]"
             print(f"\n=== {label} ===", flush=True)
             for qi, q in enumerate(questions):
@@ -705,7 +710,7 @@ def main():
                     elif args.method == "D":
                         nids = select_nodes_d(model, q["question"], tree_index)
                     elif args.method == "F":
-                        nids = select_nodes_final(q["question"])
+                        nids = select_nodes_final(model, q["question"])
                     else:
                         nids = select_nodes(model, q["question"], tree_index)
                     # 第二轮：注入选中节点内容回答
