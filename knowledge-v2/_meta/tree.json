@@ -6,7 +6,7 @@
       "parent": "comm-analog",
       "depth": 3,
       "type": "leaf",
-      "link_count": 3,
+      "link_count": 4,
       "has_cot": false,
       "children": []
     },
@@ -36,7 +36,7 @@
       "parent": "comm-channel",
       "depth": 3,
       "type": "leaf",
-      "link_count": 3,
+      "link_count": 4,
       "has_cot": false,
       "children": []
     },
@@ -135,7 +135,7 @@
       "parent": "comm-principles",
       "depth": 2,
       "type": "leaf",
-      "link_count": 2,
+      "link_count": 3,
       "has_cot": false,
       "children": []
     },
@@ -144,7 +144,7 @@
       "parent": "comm-digital",
       "depth": 3,
       "type": "core",
-      "link_count": 4,
+      "link_count": 5,
       "has_cot": true,
       "children": []
     },
@@ -346,6 +346,110 @@
       "type": "core",
       "link_count": 3,
       "has_cot": true,
+      "children": []
+    },
+    "math-bayes": {
+      "title": "贝叶斯公式（先验/似然/后验）",
+      "parent": "math-probability",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "math-calculus": {
+      "title": "微积分（工具定位）",
+      "parent": "math-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 2,
+      "has_cot": false,
+      "children": [
+        "math-complex"
+      ]
+    },
+    "math-clt": {
+      "title": "中心极限定理与大数定律",
+      "parent": "math-probability",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "math-complex": {
+      "title": "复变函数与欧拉公式",
+      "parent": "math-calculus",
+      "depth": 3,
+      "type": "core",
+      "link_count": 5,
+      "has_cot": true,
+      "children": [
+        "math-iq-narrowband"
+      ]
+    },
+    "math-eigen": {
+      "title": "特征值与特征向量",
+      "parent": "math-linear-algebra",
+      "depth": 3,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "math-iq-narrowband": {
+      "title": "窄带过程与正交分量（IQ 链路）",
+      "parent": "math-complex",
+      "depth": 4,
+      "type": "core",
+      "link_count": 5,
+      "has_cot": true,
+      "children": []
+    },
+    "math-linear-algebra": {
+      "title": "线性代数（分析骨架）",
+      "parent": "math-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 4,
+      "has_cot": false,
+      "children": [
+        "math-eigen",
+        "math-quadratic-form"
+      ]
+    },
+    "math-principles": {
+      "title": "通信数学工具（微积分/线代/概统）",
+      "parent": "root",
+      "depth": 1,
+      "type": "core",
+      "link_count": 4,
+      "has_cot": true,
+      "children": [
+        "math-calculus",
+        "math-linear-algebra",
+        "math-probability"
+      ]
+    },
+    "math-probability": {
+      "title": "概率统计（噪声与估计的语言）",
+      "parent": "math-principles",
+      "depth": 2,
+      "type": "hub",
+      "link_count": 3,
+      "has_cot": false,
+      "children": [
+        "math-bayes",
+        "math-clt"
+      ]
+    },
+    "math-quadratic-form": {
+      "title": "二次型与正定（能量视角）",
+      "parent": "math-linear-algebra",
+      "depth": 3,
+      "type": "leaf",
+      "link_count": 2,
+      "has_cot": false,
       "children": []
     },
     "mob-5g": {
@@ -597,12 +701,13 @@
       "parent": "",
       "depth": 0,
       "type": "hub",
-      "link_count": 6,
+      "link_count": 7,
       "has_cot": false,
       "children": [
         "comm-principles",
         "dsp-principles",
         "emf-principles",
+        "math-principles",
         "mob-principles",
         "net-principles",
         "rsp-principles"
@@ -682,7 +787,7 @@
       "parent": "rsp-detection-estimation",
       "depth": 3,
       "type": "leaf",
-      "link_count": 2,
+      "link_count": 3,
       "has_cot": false,
       "children": []
     },

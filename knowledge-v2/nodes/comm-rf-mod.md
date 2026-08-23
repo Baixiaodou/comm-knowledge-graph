@@ -4,7 +4,7 @@ title: 射频调制（数字带通）
 parent: comm-digital
 depth: 3
 type: core
-summary: ASK/FSK/PSK/QAM，与模拟调制对应，星座图可视化抗干扰距离，DPSK 解决相位模糊
+summary: ASK/FSK/PSK/QAM 与 M-ary 多进制，星座图可视化抗干扰距离，DPSK 解决相位模糊
 links:
   - id: comm-am
     relation: "ASK 是幅度调制的数字对应"
@@ -14,6 +14,8 @@ links:
     relation: "射频调制的电路实现"
   - id: comm-receiver
     relation: "QAM/PSK 需要相干解调，恢复 I/Q 分量"
+  - id: math-complex
+    relation: "IQ 调制的数学根基：复包络 I+jQ × 旋转载波 e^{jωt}，星座图是复平面上的点集"
 cot:
   origin: "PSK 用绝对相位代表符号，但接收端分不清 0 相位还是 π 相位，怎么办？"
   reasoning: |
@@ -23,7 +25,7 @@ cot:
     4. 代价：性能略逊 PSK（约 1-2 dB），换来解调简单 + 彻底消除相位模糊
   conclusion: "DPSK = 用「相对变化」替代「绝对相位」，牺牲一点性能换掉相干解调的复杂度与相位模糊"
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-23
 ---
 
 ## 一句话本质
@@ -44,10 +46,19 @@ updated: 2026-08-13
 | DPSK | — | 非相干（差分），解决相位模糊 |
 | QAM | 幅度+相位联合 | — |
 
+## 多进制（M-ary）—— 面试必讲的一般性框架
+
+- **定义**：M-ary 调制 = M 个不同符号（星座点），每符号携带 **log₂M bit**（BPSK 2 点/1bit、QPSK 4 点/2bit、8PSK 8 点/3bit、16QAM 16 点/4bit、64QAM 64 点/6bit）
+- **码元速率 vs 比特速率**：R_b = R_s·log₂M——符号率不变、M 翻倍，比特率就翻倍
+- **带宽效率**：约 log₂M bit/s/Hz，M 越大 → 固定带宽下速率越高（这就是"多进制"的核心价值）
+- **代价（权衡）**：M 增大 → 星座点更密 → 点间距 d 变小 → 同 SNR 下误码率升高；保持误码率需加大 SNR（每多 1 bit 约多需 2-3dB）
+- **金句**：多进制 = **用功率（SNR）换频带利用率**；调制阶数上限由可用 SNR 决定
+
 ## 关键结论（面试必答）
 
 - 星座图距离 = 抗干扰能力：相邻点最小距离 d 越大越抗噪
 - 误码性能取决于 d²/N₀（点间距 vs 噪声）；总能量固定时，星座阶数越高 → 点间距越小 → 抗噪越差
+- **多进制一般规律**：R_b = R_s·log₂M，M 每翻倍 → 每符号多 1 bit → 带宽效率 +1 bit/s/Hz，但点距缩为约 1/√2 → 需多 ~3dB SNR 保误码（见上文小节）
 - QPSK vs 16QAM：QPSK 点间距大抗干扰强（功率受限场景如卫星）；16QAM 利用率高但抗噪弱（带宽受限如地面）
 - DPSK 用相位差替代绝对相位，解决 PSK 的相位模糊（0 和 π 分不清），代价约 1-2dB
 

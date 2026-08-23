@@ -10,8 +10,10 @@ links:
     relation: "检测判断有无，估计求参量值，是统计决策的两个任务"
   - id: rsp-estimation
     relation: "参数估计与功率谱估计同属估计理论（无偏/一致/有效）"
+  - id: math-bayes
+    relation: "MAP/ML/MMSE 全部源于贝叶斯公式：先验/似然/后验是估计准则的数学源头"
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-23
 ---
 
 ## 一句话本质

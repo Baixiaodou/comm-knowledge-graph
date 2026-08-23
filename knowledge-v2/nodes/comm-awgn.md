@@ -12,8 +12,10 @@ links:
     relation: "对比：噪声是加性的，ISI 是卷积性的"
   - id: rsp-white-noise
     relation: "白噪声的统计特性（自相关=δ、功率谱平坦）来自随机信号处理"
+  - id: math-clt
+    relation: "'高斯'的数学根源：大量独立噪声粒子叠加→中心极限定理→高斯分布"
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-23
 ---
 ## 一句话本质
 

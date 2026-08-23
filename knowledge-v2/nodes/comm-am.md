@@ -12,8 +12,10 @@ links:
     relation: "ASK 是幅度调制的数字对应，QAM 用到 I/Q 分解"
   - id: comm-receiver
     relation: "相干解调需要恢复 I/Q 分量"
+  - id: math-iq-narrowband
+    relation: "窄带信号 I/Q 正交分解的数学完整链（欧拉公式→复包络→星座图）"
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-23
 ---
 ## 一句话本质
 
@@ -51,4 +53,4 @@ A(t)·cos(ω₀t + φ) = 同相分量·cos(ω₀t) + 正交分量·sin(ω₀t)
 ## 与我知识体系的关联
 
 - [[comm-angle]]：线性 vs 非线性的本质区别
-- [[comm-analog-frame]]：线性调制在模拟调制分类中的位置
+- [[comm-analog]]：线性调制在模拟调制分类中的位置

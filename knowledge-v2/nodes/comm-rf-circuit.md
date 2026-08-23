@@ -10,8 +10,10 @@ links:
     relation: "射频调制在电路层面的实现"
   - id: comm-analog
     relation: "模拟/数字调制在电路上都走这些射频环节"
+  - id: math-calculus
+    relation: "功放非线性失真用泰勒展开解释：非线性项产生新频率分量（谐波/交调）"
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-23
 ---
 ## 一句话本质
 
