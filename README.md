@@ -309,14 +309,16 @@ flowchart TB
 
 课程层次（通信工程整体框架，反映在树结构中）：
 
-```text
-数学三大件（math-principles：微积分 / 线代 / 概统）＋ 复变函数   ← 数学地基（2026-08 建树）
-   ↓
-工具课：信号与系统 + DSP（微积分）＋ 随机信号处理（概统）  ← 分析工具
-   ↓
-通信原理                                             ← 绝对核心（系统框架）
-   ↓
-应用外延：移动通信 / 高频电路 / 计网 / 电磁场天线
+```mermaid
+flowchart TB
+    M["数学地基<br/>微积分 / 线代 / 概统 + 复变<br/>（math-principles，2026-08 建树）"] --> T["工具课 · 分析工具<br/>信号与系统 + DSP（微积分）<br/>随机信号处理（概统）"]
+    T --> C["通信原理<br/>绝对核心（系统框架）"]
+    C --> A["应用外延<br/>移动通信 / 高频电路 / 计网 / 电磁场天线"]
+
+    style M fill:#16a085,color:#fff
+    style T fill:#2f855a,color:#fff
+    style C fill:#805ad5,color:#fff
+    style A fill:#2b6cb0,color:#fff
 ```
 
 ### 5. links（Wiki 连接）设计
