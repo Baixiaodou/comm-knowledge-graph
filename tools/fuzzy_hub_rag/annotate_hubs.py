@@ -23,7 +23,7 @@ from openai import OpenAI  # noqa: E402
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HERE = os.path.dirname(os.path.abspath(__file__))
-QUESTIONS = os.path.join(HERE, "questions_fuzzy.json")
+QUESTIONS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "benchmark", "questions_fuzzy.json")
 RESULT = os.path.join(HERE, "results", "annotation_draft.json")
 
 ROUNDS = 3

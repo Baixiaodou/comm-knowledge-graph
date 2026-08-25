@@ -28,7 +28,7 @@ from openai import OpenAI  # noqa: E402
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HERE = os.path.dirname(os.path.abspath(__file__))
-QUESTIONS_FUZZY = os.path.join(HERE, "questions_fuzzy.json")
+QUESTIONS_FUZZY = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "benchmark", "questions_fuzzy.json")
 RESULT_DIR = os.path.join(HERE, "results")
 
 GRID_FLOOR = [0.03, 0.06, 0.09]

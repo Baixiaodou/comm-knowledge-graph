@@ -528,6 +528,7 @@ knowledge-base/
 │   └── _meta/tree.json      # 树结构索引（build_tree.py 自动生成）
 ├── benchmark/               # 评测体系
 │   ├── questions_full.json  # 116 题完整题库
+│   ├── questions_fuzzy.json # 20 道模糊大问题专项 benchmark（fuzzy_hub_rag 用）
 │   ├── multiturn_questions.json  # 44 组多轮追问题库
 │   ├── 评测报告_*.html      # 可视化评测报告
 │   └── results/             # 评测原始数据（jsonl）
@@ -684,7 +685,7 @@ flowchart LR
 | 文件 | 说明 |
 |:---|:---|
 | `tools/fuzzy_hub_rag/README.md` | 完整实验报告（过程时间线 + 5 策略对比 + 补充实验 + 复现） |
-| `tools/fuzzy_hub_rag/questions_fuzzy.json` | 20 道模糊题 benchmark（expected_hubs 经 3 轮标注 + 人工复核） |
+| `benchmark/questions_fuzzy.json` | 20 道模糊题专项 benchmark（expected_hubs 经 3 轮标注 + 人工复核，独立于 116 题库） |
 | `tools/fuzzy_hub_rag/strategies/` | S1-S5 五个可插拔路由策略（含判定 prompt v2） |
 | `tools/fuzzy_hub_rag/fuzzy_benchmark.py` | 评测框架（Part A 分类准确率 / Part B 选点命中 / 调用成本） |
 | `tools/fuzzy_hub_rag/experiment_combined.py` | 补充实验：TF-IDF top-k 粗筛 + LLM 选点（k=4~8） |

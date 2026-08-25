@@ -14,7 +14,7 @@
 | 步骤 | 内容 | 关键产出/结论 |
 |---|---|---|
 | 0.1 判定方式否决 | 用户否掉「问题简短 + 开放式问法词表」判定（不靠谱） | 改为 benchmark-first：先有数据再定方案 |
-| 0.2 benchmark 基建 | 20 道模糊大问题（覆盖 7 树 + root 级 + 跨树）+ 从 116 题库抽 20 题对照组 | `questions_fuzzy.json` 定稿 |
+| 0.2 benchmark 基建 | 20 道模糊大问题（覆盖 7 树 + root 级 + 跨树）+ 从 116 题库抽 20 题对照组 | `benchmark/questions_fuzzy.json` 定稿（独立于 116 题库） |
 | 0.3 答案标注 | DeepSeek 3 轮（temp 0.7）独立选 hub + 投票 + 一致性核对 | 2/3 多数派定稿；F12/F19 票数规则修复；F15 人工复核修正（多数派错标 mob-channel → root，emf 树无 hub 应落 root） |
 | 0.4 五策略实现 | S1 纯 TF-IDF / S2 临界 LLM 确认 / S3 全量选点 / S4 top-5 候选 / S5 全 LLM | 全部可插拔，统一评测框架 |
 | 0.5 主实验 | 40 题 × 5 策略 + S1-S4 阈值网格（floor×margin 3×3） | **S5 胜出 A=97.5%**（对照 0 误判）；三个关键结论（见 §3） |
@@ -29,7 +29,7 @@
 
 ## 1. Benchmark 数据
 
-- **20 道模糊大问题**（`questions_fuzzy.json`）：root 级极泛 4 题（含 emf/net 两棵无
+- **20 道模糊大问题**（`benchmark/questions_fuzzy.json`，独立于 116 题库）：root 级极泛 4 题（含 emf/net 两棵无
   hub 树的课级问题落 root 兜底）+ math 2 + comm 3 + dsp 3 + mob 4 + rsp 2 + 跨树 1。
 - **标注过程**：DeepSeek 3 轮独立选 hub（temperature 0.7）→ 轮内投票定稿（仅取 ≥2 票，
   最多 2 个）→ 人工复核。11/20 题 3 轮完全一致；F15（电磁场课级问题）多数派选

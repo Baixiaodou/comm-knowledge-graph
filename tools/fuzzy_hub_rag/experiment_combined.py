@@ -34,7 +34,7 @@ KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 client = OpenAI(api_key=KEY, base_url="https://api.deepseek.com")
 
 kb.load()
-qs = json.load(open(os.path.join(HERE, "questions_fuzzy.json"), encoding="utf-8"))["questions"]
+qs = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "benchmark", "questions_fuzzy.json"), encoding="utf-8"))["questions"]
 
 
 def parse_json(text: str) -> dict:
