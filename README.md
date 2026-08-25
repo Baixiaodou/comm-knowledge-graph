@@ -673,7 +673,7 @@ flowchart LR
     style A fill:#16a085,color:#fff
 ```
 
-**benchmark-first 定案**（专项 benchmark：20 模糊题 + 116 题库抽 20 对照组，全流程见 [tools/fuzzy_hub_rag/README.md](tools/fuzzy_hub_rag/README.md)）：
+**benchmark-first 定案**（专项 benchmark：20 模糊题 + 116 题库抽 20 对照组，完整技术报告见 [docs/08-模糊大问题粗粒度匹配技术报告.md](docs/08-模糊大问题粗粒度匹配技术报告.md)，过程时间线见 [tools/fuzzy_hub_rag/README.md](tools/fuzzy_hub_rag/README.md)）：
 
 - **S5 全 LLM 判定胜出**：大小点分类 A=97.5%（40 题错 1），对照组 20/20 零误判，hub 选点 hit@2=90%；纯 TF-IDF 分流漏 8/20 大问题（recall 60%）是 S1-S4 共同瓶颈——TF-IDF 只配做粗筛（候选 k=6 即 100% 召回），不配做精选。
 - **线上形态**：路由清单 = TF-IDF top-6 候选（输入省 ~69%，`fuzzy_hub_candidate_k` 可调/可回退全量）；每 RAG 问题 +1 次 LLM 调用（~1000 token），HUB 命中后跳过精挑 gate；LLM 失败自动降级走原路径。
@@ -700,6 +700,7 @@ flowchart LR
 | `docs/01-设计总纲.md` ~ `05-任务清单.md` | 设计阶段的方法论与规划 |
 | `docs/06-项目归档总结.md` | 全部实验数据、踩坑记录与核心洞察 |
 | `docs/07-多轮追问技术报告.md` | 多轮追问提升：两个核心结论 + 关键取舍 |
+| `docs/08-模糊大问题粗粒度匹配技术报告.md` | 模糊大问题路由：benchmark-first 定案（S5 胜出）+ 关键取舍 |
 | `benchmark/评测报告_*.html` | 可视化报告（时间线、方案演进、完整实验史） |
 
 ---
