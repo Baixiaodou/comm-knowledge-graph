@@ -39,3 +39,5 @@ review/data/
 
 # 评测原始结果（题库+脚本可复现，原始 json 不入库）
 benchmark/results/
+# fuzzy_hub_rag 实验结果数据（脚本可复现，不推）
+tools/fuzzy_hub_rag/results/

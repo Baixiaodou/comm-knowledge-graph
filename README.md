@@ -536,6 +536,7 @@ knowledge-base/
 │   ├── eval_followup.py     # 多轮追问评测（baseline vs 插件）
 │   ├── multiturn_rag/
 │   │   └── followup_rag.py  # 多轮追问记忆插件（FollowupRAG + Session）
+│   ├── fuzzy_hub_rag/       # 模糊大问题粗粒度匹配（benchmark + 5 策略 + 实验报告）
 │   ├── update_readme_stats.py  # 自动同步 README 知识库统计
 │   ├── build_tree.py        # 生成树结构索引
 │   ├── kb_lint.py           # 知识库完整性校验
@@ -649,6 +650,46 @@ flowchart LR
 | `tools/eval_followup.py` | 评测脚本（baseline vs 插件，分档指标，可跑多变体对比） |
 | `benchmark/README_multiturn.md` | 完整评测说明与 v1.0→v1.4 演进记录 |
 | `docs/07-多轮追问技术报告.md` | 技术报告（两个核心结论 + 取舍） |
+
+---
+
+## 🔀 模糊大问题粗粒度匹配（fuzzy_hub_rag）
+
+模糊宽泛大问题（"移动通信都有哪些关键技术？"）直接命中具体知识点会失焦——本插件在检索入口前做**大小问题路由**：模糊大问题 → 命中 hub 枝干节点，注入「主题域总览 + 统领子主题列表」，AI 输出总览框架 + 分支列举 + 引导追问；用户追问分支时由追问记忆插件承接，落到具体 leaf/core 精细回答——**先给地图、追问再钻到街道**。独立开关，不影响正常精确检索路径。
+
+```mermaid
+flowchart LR
+    Q["用户提问"] --> R{"LLM 路由<br/>大小问题判定 + hub 选点<br/>(TF-IDF top-6 候选)"}
+    R -->|HUB 模糊大问题| H["注入 hub 内容<br/>+ 统领子主题标题树"]
+    H --> A["总览框架 + 分支列举<br/>+ 引导追问"]
+    R -->|LEAF 具体问题| N["原版精确检索<br/>TF-IDF → 精挑 gate"]
+    H -->|last_ids=子孙节点| F["追问轮 followup_rag 承接<br/>历史并入候选池"]
+    F --> N
+    N --> A
+    style R fill:#b7791f,color:#fff
+    style H fill:#2f855a,color:#fff
+    style N fill:#2b6cb0,color:#fff
+    style F fill:#805ad5,color:#fff
+    style A fill:#16a085,color:#fff
+```
+
+**benchmark-first 定案**（专项 benchmark：20 模糊题 + 116 题库抽 20 对照组，全流程见 [tools/fuzzy_hub_rag/README.md](tools/fuzzy_hub_rag/README.md)）：
+
+- **S5 全 LLM 判定胜出**：大小点分类 A=97.5%（40 题错 1），对照组 20/20 零误判，hub 选点 hit@2=90%；纯 TF-IDF 分流漏 8/20 大问题（recall 60%）是 S1-S4 共同瓶颈——TF-IDF 只配做粗筛（候选 k=6 即 100% 召回），不配做精选。
+- **线上形态**：路由清单 = TF-IDF top-6 候选（输入省 ~69%，`fuzzy_hub_candidate_k` 可调/可回退全量）；每 RAG 问题 +1 次 LLM 调用（~1000 token），HUB 命中后跳过精挑 gate；LLM 失败自动降级走原路径。
+- **root 是合法选点**：极泛问题（"这个知识库都有哪些内容"）的正确 hub 就是 root，不排除。
+
+### 文件
+
+| 文件 | 说明 |
+|:---|:---|
+| `tools/fuzzy_hub_rag/README.md` | 完整实验报告（过程时间线 + 5 策略对比 + 补充实验 + 复现） |
+| `tools/fuzzy_hub_rag/questions_fuzzy.json` | 20 道模糊题 benchmark（expected_hubs 经 3 轮标注 + 人工复核） |
+| `tools/fuzzy_hub_rag/strategies/` | S1-S5 五个可插拔路由策略（含判定 prompt v2） |
+| `tools/fuzzy_hub_rag/fuzzy_benchmark.py` | 评测框架（Part A 分类准确率 / Part B 选点命中 / 调用成本） |
+| `tools/fuzzy_hub_rag/experiment_combined.py` | 补充实验：TF-IDF top-k 粗筛 + LLM 选点（k=4~8） |
+| `tools/fuzzy_hub_rag/verify_online.py` | 线上实现本地端到端验证脚本 |
+| 线上实现 | `src/plugins/ai_chat/fuzzy_hub_rag.py` + `node_retriever.py` hook（`fuzzy_hub_enabled` 开关） |
 
 ---
 
