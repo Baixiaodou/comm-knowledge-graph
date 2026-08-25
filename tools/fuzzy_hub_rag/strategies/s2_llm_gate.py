@@ -18,14 +18,16 @@ class S2(BaseStrategy):
             {"role": "system", "content": ROUTE_SYSTEM},
             {"role": "user", "content": build_confirm_user(query, cand)},
         ], max_tokens=10, temperature=0.1)
-        return reply.strip().upper()[:8]
+        return (reply or "").strip()
 
     def route(self, query: str):
         hubs, leaves = self._dual_pool(query)
         is_hub, _h, _l = self._decide(hubs, leaves)
         if is_hub:
             ans = self._confirm(query, hubs)
-            if ans.startswith("HUB"):
+            # 防御解析：LLM 可能带前后缀（如"答案：HUB"），HUB 出现在回复中即按 HUB
+            # （"LEAF" 不含 "HUB" 子串，不会反向误判）
+            if "HUB" in ans.upper():
                 return "hub", [n["id"] for n, _s in hubs[:2]]
             return "leaf", []
         return "leaf", []

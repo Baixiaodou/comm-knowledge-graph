@@ -14,6 +14,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 import time
 
@@ -72,7 +73,11 @@ def one_round(client, question: str, menu: str) -> dict:
         max_tokens=200,
     )
     text = (resp.choices[0].message.content or "").strip()
-    text = text.strip("```json").strip("```").strip()
+    # 剥 ```json 围栏。不能用 strip("```json")：strip 按字符集剥（{`,j,s,o,n}），
+    # 会误伤 JSON 尾部属于该字符集的字符（如截断输出的 reason 以 s/n 结尾）
+    m = re.match(r"^```(?:json)?\s*\n?(.*?)\n?```$", text, re.DOTALL)
+    if m:
+        text = m.group(1).strip()
     data = json.loads(text)
     hubs = [h for h in data.get("hubs", []) if h]
     if not hubs:

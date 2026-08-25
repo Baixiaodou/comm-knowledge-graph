@@ -116,7 +116,7 @@ def eval_strategy(strategy, questions):
     }
 
 
-def run_one(strategy_cls, questions, client, floor, margin, use_llm):
+def run_one(strategy_cls, questions, client, floor, margin):
     strategy = strategy_cls(kb, client=client, floor=floor, margin=margin)
     metrics = eval_strategy(strategy, questions)
     metrics.update({"floor": floor, "margin": margin, "strategy": strategy.name})
@@ -160,7 +160,7 @@ def main():
         # S5 全 LLM 判定与 floor/margin 无关，只跑一组（省调用）
         cls_grid = [(0.0, 0.0)] if cls.name == "S5" else grid
         for floor, margin in cls_grid:
-            _s, metrics = run_one(cls, questions, client, floor, margin, need_llm)
+            _s, metrics = run_one(cls, questions, client, floor, margin)
             results.append(metrics)
             report["runs"].append(metrics)
             json.dump(report, open(os.path.join(RESULT_DIR, "experiment_latest.json"), "w",
