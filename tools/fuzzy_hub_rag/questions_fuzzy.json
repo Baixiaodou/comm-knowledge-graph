@@ -1,0 +1,185 @@
+{
+  "_meta": {
+    "name": "模糊大问题 benchmark 题库 v1",
+    "count": 20,
+    "design": "覆盖：root 级极泛 5 题（含 emf/net 无 hub 树的课级问题落 root 兜底）+ math 2 + comm 3 + dsp 3 + mob 4 + rsp 2 + 跨树 1。每题 expected_hubs 由 annotate_hubs.py 3 轮 AI 标注 + 人工复核定稿。",
+    "expected_hubs_max": 2,
+    "annotation": {
+      "status": "finalized",
+      "rounds": 3,
+      "temperature": 0.7,
+      "model": "deepseek-chat",
+      "process": "DeepSeek 3 轮独立选 hub（temp 0.7）→ 轮内投票定稿（仅取 >=2 票的 hub，最多 2 个；超出按轮次出现数裁 2）→ 人工复核。F15 人工修正为 root（多数派 mob-channel 错误）。"
+    }
+  },
+  "questions": [
+    {
+      "id": "F01",
+      "question": "这个知识库都有哪些内容？",
+      "expected_hubs": [
+        "root"
+      ],
+      "note": "体系级极泛问题 → root"
+    },
+    {
+      "id": "F02",
+      "question": "通信工程都有哪些方向？",
+      "expected_hubs": [
+        "comm-analog",
+        "comm-digital"
+      ],
+      "note": "体系级极泛问题 → root"
+    },
+    {
+      "id": "F03",
+      "question": "想系统地学通信工程，应该按什么顺序学？",
+      "expected_hubs": [
+        "root"
+      ],
+      "note": "课程层次（数学地基→工具课→通信原理→应用外延）→ root"
+    },
+    {
+      "id": "F04",
+      "question": "通信里要用到哪些数学知识？",
+      "expected_hubs": [
+        "math-calculus",
+        "math-linear-algebra"
+      ],
+      "note": "math 树三 hub 取 2 代表，标注定"
+    },
+    {
+      "id": "F05",
+      "question": "微积分在通信里主要用来做什么？",
+      "expected_hubs": [
+        "math-calculus",
+        "comm-analog"
+      ],
+      "note": "math-calculus（泰勒/非线性）"
+    },
+    {
+      "id": "F06",
+      "question": "通信原理这门课都讲了哪些内容？",
+      "expected_hubs": [
+        "comm-analog",
+        "comm-digital"
+      ],
+      "note": "comm 树三 hub 取 2 代表，标注定"
+    },
+    {
+      "id": "F07",
+      "question": "模拟调制都有哪些类型？",
+      "expected_hubs": [
+        "comm-analog"
+      ],
+      "note": "comm-analog"
+    },
+    {
+      "id": "F08",
+      "question": "数字信号处理都有哪些主要内容？",
+      "expected_hubs": [
+        "dsp-dft-fft",
+        "dsp-sampling"
+      ],
+      "note": "dsp 树四 hub 取 2 代表，标注定"
+    },
+    {
+      "id": "F09",
+      "question": "傅里叶变换家族都有哪些？",
+      "expected_hubs": [
+        "dsp-transforms"
+      ],
+      "note": "临界题：六变换族归 dsp-transforms，标注定"
+    },
+    {
+      "id": "F10",
+      "question": "采样和重建要注意哪些问题？",
+      "expected_hubs": [
+        "dsp-sampling"
+      ],
+      "note": "dsp-sampling（采样定理/混叠/重建）"
+    },
+    {
+      "id": "F11",
+      "question": "移动通信都有哪些关键技术？",
+      "expected_hubs": [
+        "mob-anti-fading",
+        "mob-networking"
+      ],
+      "note": "mob 树取 2 代表，标注定"
+    },
+    {
+      "id": "F12",
+      "question": "无线信道都有哪些类型？",
+      "expected_hubs": [
+        "mob-channel"
+      ],
+      "note": "mob-channel"
+    },
+    {
+      "id": "F13",
+      "question": "随机信号处理主要研究什么？",
+      "expected_hubs": [
+        "rsp-correlation",
+        "rsp-process"
+      ],
+      "note": "rsp 树取 2 代表，标注定"
+    },
+    {
+      "id": "F14",
+      "question": "信号检测与估计都包括哪些内容？",
+      "expected_hubs": [
+        "rsp-detection-estimation"
+      ],
+      "note": "rsp-detection-estimation"
+    },
+    {
+      "id": "F15",
+      "question": "电磁场与电磁波主要讲什么？",
+      "expected_hubs": [
+        "root"
+      ],
+      "note": "emf 树无 hub（仅 emf-principles core）→ root 兜底"
+    },
+    {
+      "id": "F16",
+      "question": "多用户怎么共享同一个频谱？",
+      "expected_hubs": [
+        "mob-networking"
+      ],
+      "note": "mob-networking（多址）"
+    },
+    {
+      "id": "F17",
+      "question": "计算机网络都有哪些内容？",
+      "expected_hubs": [
+        "root"
+      ],
+      "note": "net 树无 hub（6 core）→ root 兜底"
+    },
+    {
+      "id": "F18",
+      "question": "数学工具在通信和信号处理里怎么用？",
+      "expected_hubs": [
+        "math-linear-algebra",
+        "math-calculus"
+      ],
+      "note": "跨树泛问：数学×DSP，标注定"
+    },
+    {
+      "id": "F19",
+      "question": "无线通信的演进方向有哪些？",
+      "expected_hubs": [
+        "mob-systems"
+      ],
+      "note": "代际演进 + 组网，标注定"
+    },
+    {
+      "id": "F20",
+      "question": "数字调制有哪些方案？",
+      "expected_hubs": [
+        "comm-digital"
+      ],
+      "note": "comm-digital"
+    }
+  ]
+}
