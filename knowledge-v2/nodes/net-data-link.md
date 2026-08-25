@@ -1,8 +1,8 @@
 ---
 id: net-data-link
 title: 数据链路层
-parent: net-principles
-depth: 2
+parent: net-core
+depth: 3
 type: core
 summary: CSMA/CD（有线以太网）vs CSMA/CA（无线），差错控制（ARQ/FEC），VLAN 划分广播域
 links:

@@ -1,8 +1,8 @@
 ---
 id: net-transport
 title: 传输层（TCP/UDP）
-parent: net-principles
-depth: 2
+parent: net-core
+depth: 3
 type: core
 summary: TCP（面向连接、可靠、有流量/拥塞控制）vs UDP（无连接、快），可靠性换速度的权衡
 links:

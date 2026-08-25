@@ -9,7 +9,10 @@
       "rounds": 3,
       "temperature": 0.7,
       "model": "deepseek-chat",
-      "process": "DeepSeek 3 轮独立选 hub（temp 0.7）→ 轮内投票定稿（仅取 >=2 票的 hub，最多 2 个；超出按轮次出现数裁 2）→ 人工复核。F15 人工修正为 root（多数派 mob-channel 错误）。"
+      "process": "DeepSeek 3 轮独立选 hub（temp 0.7）→ 轮内投票定稿（仅取 >=2 票的 hub，最多 2 个；超出按轮次出现数裁 2）→ 人工复核。F15 人工修正为 root（多数派 mob-channel 错误）。",
+      "history": [
+        "2026-08-26: F17 expected_hubs root -> net-core（新增 net-core hub）"
+      ]
     }
   },
   "questions": [
@@ -152,9 +155,9 @@
       "id": "F17",
       "question": "计算机网络都有哪些内容？",
       "expected_hubs": [
-        "root"
+        "net-core"
       ],
-      "note": "net 树无 hub（6 core）→ root 兜底"
+      "note": "net 树无 hub（6 core）→ root 兜底 2026-08-26 计网补 hub（net-core）后由 root 改为 net-core"
     },
     {
       "id": "F18",

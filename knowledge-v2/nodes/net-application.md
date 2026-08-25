@@ -1,8 +1,8 @@
 ---
 id: net-application
 title: 应用层（HTTP/TLS/安全）
-parent: net-principles
-depth: 2
+parent: net-core
+depth: 3
 type: core
 summary: HTTP 演进（1.1→2→3 解决队头阻塞）、TLS 握手、网络安全（SYN Flood/NAT/VPN）
 links:

@@ -29,8 +29,8 @@
 
 ## 1. Benchmark 数据
 
-- **20 道模糊大问题**（`benchmark/questions_fuzzy.json`，独立于 116 题库）：root 级极泛 4 题（含 emf/net 两棵无
-  hub 树的课级问题落 root 兜底）+ math 2 + comm 3 + dsp 3 + mob 4 + rsp 2 + 跨树 1。
+- **20 道模糊大问题**（`benchmark/questions_fuzzy.json`，独立于 116 题库）：root 级极泛 4 题（含 emf 无 hub 树
+  课级问题落 root 兜底；net 树于 2026-08-26 补 net-core hub，F17 改标 net-core）+ math 2 + comm 3 + dsp 3 + mob 4 + rsp 2 + 跨树 1。
 - **标注过程**：DeepSeek 3 轮独立选 hub（temperature 0.7）→ 轮内投票定稿（仅取 ≥2 票，
   最多 2 个）→ 人工复核。11/20 题 3 轮完全一致；F15（电磁场课级问题）多数派选
   `mob-channel` 属明显错误，人工修正为 `root`（emf 树无 hub）；F12 标注本身 2/3 票

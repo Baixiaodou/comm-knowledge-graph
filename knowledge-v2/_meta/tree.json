@@ -638,8 +638,8 @@
     },
     "net-application": {
       "title": "应用层（HTTP/TLS/安全）",
-      "parent": "net-principles",
-      "depth": 2,
+      "parent": "net-core",
+      "depth": 3,
       "type": "core",
       "link_count": 3,
       "has_cot": true,
@@ -647,17 +647,32 @@
     },
     "net-architecture": {
       "title": "网络体系结构",
-      "parent": "net-principles",
-      "depth": 2,
+      "parent": "net-core",
+      "depth": 3,
       "type": "core",
       "link_count": 4,
       "has_cot": true,
       "children": []
     },
-    "net-data-link": {
-      "title": "数据链路层",
+    "net-core": {
+      "title": "计网核心机制（分层与封装）",
       "parent": "net-principles",
       "depth": 2,
+      "type": "hub",
+      "link_count": 5,
+      "has_cot": false,
+      "children": [
+        "net-application",
+        "net-architecture",
+        "net-data-link",
+        "net-network",
+        "net-transport"
+      ]
+    },
+    "net-data-link": {
+      "title": "数据链路层",
+      "parent": "net-core",
+      "depth": 3,
       "type": "core",
       "link_count": 5,
       "has_cot": true,
@@ -665,8 +680,8 @@
     },
     "net-network": {
       "title": "网络层（IP 与路由）",
-      "parent": "net-principles",
-      "depth": 2,
+      "parent": "net-core",
+      "depth": 3,
       "type": "core",
       "link_count": 4,
       "has_cot": true,
@@ -680,17 +695,13 @@
       "link_count": 8,
       "has_cot": true,
       "children": [
-        "net-application",
-        "net-architecture",
-        "net-data-link",
-        "net-network",
-        "net-transport"
+        "net-core"
       ]
     },
     "net-transport": {
       "title": "传输层（TCP/UDP）",
-      "parent": "net-principles",
-      "depth": 2,
+      "parent": "net-core",
+      "depth": 3,
       "type": "core",
       "link_count": 5,
       "has_cot": true,

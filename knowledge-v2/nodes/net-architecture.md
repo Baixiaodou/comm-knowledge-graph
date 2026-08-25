@@ -1,8 +1,8 @@
 ---
 id: net-architecture
 title: 网络体系结构
-parent: net-principles
-depth: 2
+parent: net-core
+depth: 3
 type: core
 summary: OSI 七层 vs TCP/IP 四层，LLC/MAC 子层划分，证实性 vs 非证实性服务
 links:

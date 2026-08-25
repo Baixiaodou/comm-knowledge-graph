@@ -1,8 +1,8 @@
 ---
 id: net-network
 title: 网络层（IP 与路由）
-parent: net-principles
-depth: 2
+parent: net-core
+depth: 3
 type: core
 summary: IP 寻址与路由选择，ARP（IP→MAC）/RARP，网络互连设备分层
 links:
