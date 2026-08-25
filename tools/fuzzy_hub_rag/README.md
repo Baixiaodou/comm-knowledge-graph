@@ -1,7 +1,7 @@
 # fuzzy_hub_rag · 模糊大问题粗粒度匹配 — 实验报告
 
 > 目标：检测「模糊宽泛大问题」（如"移动通信都有哪些关键技术？"）→ 跳过正常精确命中
-> core/leaf 的路径 → 匹配 19 个 hub 中间节点 → 注入「hub 内容 + 统领的子主题列表」→
+> core/leaf 的路径 → 匹配 hub 枝干节点（当前 20 个）→ 注入「hub 内容 + 统领的子主题列表」→
 > AI 输出「总览框架 + 分支列举 + 引导追问」；用户随后针对分支追问时由 followup_rag
 > 插件承接上下文，定位到具体 leaf/core 精细回答（先给地图、追问再钻到街道）。
 >
@@ -93,8 +93,8 @@
 
 - 每次检索 +1 次 LLM 调用（判定+选点一次完成，HUB 命中后不再走正常 `_refine`，
   净增成本 ≈ 1 次调用/问题）；
-- 路由清单 = TF-IDF 对 19 hub 排序取 top-6（`config.fuzzy_hub_candidate_k`，见第 5 节），
-  LLM 只从候选里选；
+- 路由清单 = TF-IDF 对全部 hub（当前 20，net-core 于 2026-08-26 补入）排序取 top-6
+  （`config.fuzzy_hub_candidate_k`，见第 5 节），LLM 只从候选里选；
 - 独立开关 `fuzzy_hub_enabled`，关闭时行为与现状完全一致；
 - HUB 命中：注入「hub content + 统领子主题（children+孙）标题列表」，
   `last_ids` = 子孙 leaf/core id → followup_rag 追问插件零改动承接，实现闭环；

@@ -23,11 +23,12 @@
 
 ```mermaid
 flowchart LR
-    A["📚 知识库本体<br/>84 节点 · 树 + Wiki + 思维链"] --> B["🔍 检索流水线<br/>TF-IDF → links → LLM 精挑"]
+    A["📚 知识库本体<br/>85 节点 · 树 + Wiki + 思维链"] --> B["🔍 检索流水线<br/>TF-IDF → links → LLM 精挑"]
     B --> C["🧪 评测体系<br/>116 题 × 多模型 × 裁判"]
     A --> D["🧩 复习出题插件<br/>AI 出题 + 学习记录"]
     B --> E["💬 多轮追问提升<br/>追问记忆 · 44 组题库"]
     E -.->|验证与反馈| B
+    B --> F["🔀 模糊大问题路由<br/>fuzzy_hub_rag · 20 道专项题库"]
     C -.->|验证与反馈| A
 
     style A fill:#2b6cb0,color:#fff
