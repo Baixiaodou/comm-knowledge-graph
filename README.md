@@ -608,8 +608,6 @@ streamlit run app.py
 > [!WARNING]
 > 当前为**初版（MVP）**：选节点靠下拉框（暂不支持点击图谱直接选中）、判断题/填空题只能 AI 生成、暂无追问/题目编辑/导入导出。Phase 2 规划：单题追问、题目编辑与导入导出、难度自适应、点击图谱直接选节点。
 
-> **📦 配套 skill · 文档吸收（kb-ingest）**：想反向把一份 Word / txt 讲义或口述稿按本库规范整理入库，用操作规程 [skills/kb-ingest/SKILL.md](skills/kb-ingest/SKILL.md)：AI 完成分流判定（**并入现有节点 / 挂载子节点 / 新建知识点 / 新建课程树**）→ 按五段式成文 → `kb_lint → build_tree → update_readme_stats` 三道闸门入库，人工只需确认分流表。任意 AI 编码助手可照此执行。
-
 ---
 
 ## 💬 多轮追问提升
@@ -712,3 +710,7 @@ flowchart LR
 ## 📜 License
 
 本项目采用 [MIT License](LICENSE)。
+
+---
+
+> **📦 配套 skill · 文档吸收（kb-ingest）**：想反向把一份 Word / txt 讲义或口述稿按本库规范整理入库，用操作规程 [skills/kb-ingest/SKILL.md](skills/kb-ingest/SKILL.md)：AI 完成分流判定（**并入现有节点 / 挂载子节点 / 新建知识点 / 新建课程树**）→ 按五段式成文 → `kb_lint → build_tree → update_readme_stats` 三道闸门入库，人工只需确认分流表。任意 AI 编码助手可照此执行。
