@@ -29,6 +29,7 @@ flowchart LR
     B --> E["💬 多轮追问提升<br/>追问记忆 · 44 组题库"]
     E -.->|验证与反馈| B
     B --> F["🔀 模糊大问题路由<br/>fuzzy_hub_rag · 20 道专项题库"]
+    G["📥 文档吸收 skill<br/>kb-ingest · Word/txt 入库"] -->|四类分流| A
     C -.->|验证与反馈| A
 
     style A fill:#2b6cb0,color:#fff
@@ -36,6 +37,7 @@ flowchart LR
     style C fill:#b7791f,color:#fff
     style D fill:#805ad5,color:#fff
     style E fill:#16a085,color:#fff
+    style G fill:#c53030,color:#fff
 ```
 
 ---
@@ -117,6 +119,8 @@ flowchart LR
 - [🚀 快速开始](#快速开始)
 - [🧩 复习出题插件](#复习出题插件)
 - [💬 多轮追问提升](#多轮追问提升)
+- [🔀 模糊大问题粗粒度匹配](#模糊大问题粗粒度匹配fuzzy_hub_rag)
+- [📥 配套 skill：文档吸收](#配套-skill文档吸收kb-ingest)
 - [📄 设计文档](#设计文档)
 
 ---
@@ -544,6 +548,7 @@ knowledge-base/
 │   ├── kb_lint.py           # 知识库完整性校验
 │   └── archive/             # 历史实验脚本/题库（归档，仅供参考）
 ├── review/                  # 复习出题插件（Streamlit，只读知识库）
+├── skills/kb-ingest/        # 文档吸收 skill 操作规程（Word/txt → 知识库）
 └── docs/                    # 设计文档（01-07）
 ```
 
@@ -695,6 +700,42 @@ flowchart LR
 
 ---
 
+## 📥 配套 skill：文档吸收（kb-ingest）
+
+想反向把一份 **Word / txt 讲义或口述稿**按本库规范整理入库？配套 skill 给出完整操作规程（`skills/kb-ingest/SKILL.md`），**任意 AI 编码助手照此执行即可**，人工只需确认分流表：AI 通读知识库清单后对文档内容做**四类分流判定**（已存在的内容并入现有节点、可展开的挂子节点、新知识建知识点、全新主题建课程树），按五段式模板逐节点成文，再过三道闸门入库——全程增量、逐章推进、可随时中断。
+
+```mermaid
+flowchart LR
+    U["📄 用户上传<br/>Word / txt 讲义 · 口述稿"] --> S["① 构建上下文<br/>节点规范 + 全库节点清单摘要"]
+    S --> C{"② 四类分流判定<br/>AI 判定 · 人工确认分流表"}
+    C -->|内容已存在| M["并入现有节点<br/>merge_into"]
+    C -->|可作子知识点| A["挂载子节点<br/>attach"]
+    C -->|全新知识点| N["新建知识点<br/>new_node"]
+    C -->|全新主题| T["新建课程树<br/>new_tree"]
+    M --> W["③ 按五段式成文<br/>frontmatter 八项 · links 白名单"]
+    A --> W
+    N --> W
+    T --> W
+    W --> G["④ 三道闸门入库<br/>kb_lint → build_tree → update_readme_stats"]
+
+    style U fill:#2d3748,color:#fff
+    style S fill:#2b6cb0,color:#fff
+    style C fill:#b7791f,color:#fff
+    style W fill:#2f855a,color:#fff
+    style G fill:#16a085,color:#fff
+```
+
+**给 AI 助手的一句话用法**：先读 `skills/kb-ingest/SKILL.md`，再给出文档路径；助手会先提交分流表等人确认，再逐节点成文，最后自跑三道闸门校验通过才算完成。
+
+### 文件
+
+| 文件 | 说明 |
+|:---|:---|
+| `skills/kb-ingest/SKILL.md` | 完整操作规程：上下文构建、四类分流判定、写作规范（五段式）、入库闸门 |
+| `knowledge-v2/_meta/node-spec.md` | 节点格式规范 v1.1（八项 frontmatter + 五段式正文模板） |
+
+---
+
 ## 📄 设计文档
 
 | 文档 | 内容 |
@@ -710,7 +751,3 @@ flowchart LR
 ## 📜 License
 
 本项目采用 [MIT License](LICENSE)。
-
----
-
-> **📦 配套 skill · 文档吸收（kb-ingest）**：想反向把一份 Word / txt 讲义或口述稿按本库规范整理入库，用操作规程 [skills/kb-ingest/SKILL.md](skills/kb-ingest/SKILL.md)：AI 完成分流判定（**并入现有节点 / 挂载子节点 / 新建知识点 / 新建课程树**）→ 按五段式成文 → `kb_lint → build_tree → update_readme_stats` 三道闸门入库，人工只需确认分流表。任意 AI 编码助手可照此执行。
