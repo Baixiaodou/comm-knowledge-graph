@@ -13,9 +13,42 @@
   <img src="https://img.shields.io/badge/license-MIT-9aa5b1?style=flat-square" alt="license">
 </p>
 
+## 📑 目录
+
+- [🌱 为什么做这个项目](#为什么做这个项目)
+- [🧭 项目全景](#项目全景)
+- [🎯 核心结果](#核心结果)
+- [🚀 快速开始](#快速开始)
+- [✨ 核心亮点](#核心亮点)
+- [🧠 知识库设计](#知识库设计)
+- [🔍 检索方案研究](#检索方案研究)
+- [🧪 评测体系](#评测体系)
+- [🧩 复习出题插件](#复习出题插件)
+- [💬 多轮追问提升](#多轮追问提升)
+- [🔀 模糊大问题粗粒度匹配](#模糊大问题粗粒度匹配fuzzy_hub_rag)
+- [📥 配套 skill：文档吸收](#配套-skill文档吸收kb-ingest)
+- [📁 项目结构](#项目结构)
+- [📄 设计文档](#设计文档)
+- [📜 License](#license)
+
+---
+
 ## 🌱 为什么做这个项目
 
 两个触发点：**一是大模型答专业课常细节模糊、要点不全甚至出错；二是想把大学以来的笔记与课程思考整理成电子版。** 于是把专业课知识做成可检索的知识图谱，让 AI 回答专业问题时先查再答、有据可依。
+
+大语言模型（LLM）在回答**专业课程问题**时存在明显短板：对通信原理、信号处理这类需要精确概念与推理的领域，通用模型常出现**概念混淆、要点遗漏**，甚至被"反直觉陷阱题"带偏。
+
+> [!IMPORTANT]
+> **典型陷阱**：「DSB 与 SSB 的抗噪性能是否相同？」——公平比较下两者相同，但大量资料误传"SSB 更优 3dB"。早期小规模实测中，多个中小模型（7B/8B/14B/32B 档位）均答错，因其训练语料中混入了错误答案。
+
+本项目探索的核心问题：**如何用外部知识库增强 LLM 的专业问答能力？**
+
+| 子问题 | 方案 |
+|:---|:---|
+| 📦 知识如何**表示** | 设计「节点 + 树 + Wiki + 思维链」三层知识图谱结构 |
+| 🔎 知识如何**检索** | 系统对比 6 种检索方案，重复实验压噪声，得到稳定结论 |
+| 🧪 效果如何**评测** | 搭建多模型 benchmark（5 档规模 × 裸跑/加知识库 × 严格裁判） |
 
 ---
 
@@ -64,81 +97,27 @@ flowchart LR
 
 ---
 
-## 🧪 评测可信度：为什么这些增益是真的
+## 🚀 快速开始
 
-增益数字的可靠性直接决定实验结论的可信度。本节说明评分维度（完整度 / 正确度 / 逻辑性）、排除常见测量陷阱（尤其 LLM 裁判的长度偏见），并如实列出已知局限。
+```bash
+# 0. 安装依赖（LLM 调用 + YAML 解析）
+pip install -r tools/requirements.txt
 
-### 1. 评分维度：完整度、正确度、逻辑性
+# 1. 校验知识库完整性
+python tools/kb_lint.py
 
-裁判（qwen-max，温度 0）按标准答案打分（0-10），评分机制如下：
+# 2. 生成树结构索引（新增/修改节点后）
+python tools/build_tree.py
 
-![裁判评分机制：正确度 / 完整度 / 逻辑性](benchmark/scoring_rules.png)
+# 3. 同步 README 知识库统计（新增/删除节点后）
+python tools/update_readme_stats.py
 
-> 反直觉难题正是测「逻辑性/深刻度」：裸跑模型普遍卡在 6 分（只答表面规律），注入知识库的 **cot 思维链**后答出深层机制 → 8-9 分，这是反直觉子集增益最大（14B +1.067）的直接原因。
+# 4. 跑单轮评测（需配置 API key，见 tools/.env.example）
+python tools/kb_benchmark.py --limit 5   # 先跑 5 题测试；全量去掉 --limit
 
-### 2. 长度偏见检查（LLM-as-judge 最大的质疑点）
-
-裁判会不会"看答案长就给高分"？用本轮数据实测排除：
-
-| 模型 | 裸跑平均长度 | +知识库平均长度 | 结论 |
-|------|:---:|:---:|------|
-| Qwen3-14B | 683 字符 | 628 字符（**更短**，0.92x） | 答案更短却分数更高 → 排除长度骗分 |
-| DeepSeek | 706 字符 | 694 字符（几乎不变，0.98x） | 长度无变化但分数提升 → 同上 |
-
-### 3. 提升模式分析
-
-反直觉 15 题逐题对比，增益是「多点小提升」（14B 以 +1~+2 为主，仅 1 题 -2 的裁判波动），而非少数题暴涨——说明知识库的帮助是均匀、可复现的，不是个别题碰巧命中。
-
-### 4. 实验卫生措施
-
-- **同轮同裁判**：裸跑 vs +知识库在**同一轮、同一个裁判**下打分，杜绝跨轮次裁判波动（实测跨轮次裸跑基线有 ±0.5 的自然波动，故只承认轮内增益，跨轮次分数不可直接比）；
-- **测量卫生**：选点失败标记 `degraded`（裸跑成绩不得冒充 +知识库）；API 调用失败（`[ERROR]`）不打分、以 -1 剔除出统计；裁判输出类型校验（score 必须是数字，防异常污染）；
-- **失败重试**：每次调用 2 次重试 + 180s 超时（慢模型如 8B/32B 单独跑或分段并行，避免限流丢数据）。
-
-### 5. 已知局限
-
-- 反直觉子集仅 15 题，均值受单题裁判波动影响（±0.3 属正常范围）；
-- qwen-max 裁判自身有非确定性（温度 0 但非严格确定），跨轮次分数不完全可比；
-- 本表为 **method F（最终检索方案）** 口径，与早期 method D 的历史结果不直接可比；
-- 题目覆盖通信原理 / DSP / 移动通信 / 随机信号 / 计算机网络五门课，知识库对题目领域外的泛化能力未验证。
-
----
-
-## 📑 目录
-
-- [🌱 为什么做这个项目](#为什么做这个项目)
-- [🧭 项目全景](#项目全景)
-- [🎯 核心结果](#核心结果)
-- [🧪 评测可信度](#评测可信度为什么这些增益是真的)
-- [💡 项目背景与动机](#项目背景与动机)
-- [✨ 核心亮点](#核心亮点)
-- [🧠 知识库设计](#知识库设计)
-- [🔍 检索方案研究](#检索方案研究)
-- [🧪 评测体系](#评测体系)
-- [📁 项目结构](#项目结构)
-- [🚀 快速开始](#快速开始)
-- [🧩 复习出题插件](#复习出题插件)
-- [💬 多轮追问提升](#多轮追问提升)
-- [🔀 模糊大问题粗粒度匹配](#模糊大问题粗粒度匹配fuzzy_hub_rag)
-- [📥 配套 skill：文档吸收](#配套-skill文档吸收kb-ingest)
-- [📄 设计文档](#设计文档)
-
----
-
-## 💡 项目背景与动机
-
-大语言模型（LLM）在回答**专业课程问题**时存在明显短板：对通信原理、信号处理这类需要精确概念与推理的领域，通用模型常出现**概念混淆、要点遗漏**，甚至被"反直觉陷阱题"带偏。
-
-> [!IMPORTANT]
-> **典型陷阱**：「DSB 与 SSB 的抗噪性能是否相同？」——公平比较下两者相同，但大量资料误传"SSB 更优 3dB"。早期小规模实测中，多个中小模型（7B/8B/14B/32B 档位）均答错，因其训练语料中混入了错误答案。
-
-本项目探索的核心问题：**如何用外部知识库增强 LLM 的专业问答能力？**
-
-| 子问题 | 方案 |
-|:---|:---|
-| 📦 知识如何**表示** | 设计「节点 + 树 + Wiki + 思维链」三层知识图谱结构 |
-| 🔎 知识如何**检索** | 系统对比 6 种检索方案，重复实验压噪声，得到稳定结论 |
-| 🧪 效果如何**评测** | 搭建多模型 benchmark（5 档规模 × 裸跑/加知识库 × 严格裁判） |
+# 5. 跑多轮追问评测（对比 baseline vs 插件）
+python tools/eval_followup.py --limit 5
+```
 
 ---
 
@@ -165,9 +144,6 @@ flowchart LR
     T[树层级] --> T1["是什么：分类"]
     W[Wiki 连接] --> W1["和什么相关"]
     C[思维链] --> C1["怎么想"]
-    style T fill:#2b6cb0,color:#fff
-    style W fill:#b7791f,color:#fff
-    style C fill:#2f855a,color:#fff
 ```
 
 > **设计理念**：*树管"在哪"，Wiki 管"和谁相关"，cot 管"怎么想"*——三者统一在「节点」这一载体上，即 **「节点即一切」**。
@@ -176,16 +152,17 @@ flowchart LR
 
 每个 `.md` 文件是一个**知识点节点**，按「是否有思维链、是否有子节点」分为三类：
 
+<details>
+<summary>点击展开：三类节点结构图</summary>
+
 ```mermaid
 flowchart TB
-    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（37）<br/>带 cot 思维链：为什么 → 推导 → 结论"]
-    MD --> HUB["🟡 hub · 枢纽（20）<br/>统领子节点、组织层次，无思维链"]
-    MD --> LEAF["🟢 leaf · 叶子（28）<br/>具体知识点，树的末端"]
-    style MD fill:#805ad5,color:#fff
-    style CORE fill:#2b6cb0,color:#fff
-    style HUB fill:#b7791f,color:#fff
-    style LEAF fill:#2f855a,color:#fff
+    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（37）"]
+    MD --> HUB["🟡 hub · 枢纽（20）"]
+    MD --> LEAF["🟢 leaf · 叶子（28）"]
 ```
+
+</details>
 
 | 类型 | 含义 | 特征 | 数量 |
 |------|------|------|:---:|
@@ -248,25 +225,18 @@ cot:
     6. 循环卷积既消 ISI 又保正交
   conclusion: "高速→低速 + 正交 + CP 循环卷积，把频率选择性信道分解成平坦子信道"
 ---
-
-## 一句话本质
-OFDM 把一路高速数据拆成 N 路低速正交子载波，用 CP 把线性卷积变循环卷积，
-从而把频率选择性信道分解成若干平坦子信道。
-
-## 核心机制（一条链）
-高速流 → 串/并转换 → 子载波正交 → IFFT/FFT → 加 CP → 循环卷积 → 信道对角化
-
-## 关键结论
-- 子载波正交 → 频谱重叠但互不干扰 → 比 FDM 省一半频谱
-- CP > 最大时延扩展 → 消除 ISI
-- CP 用循环卷积不用补零 → 既消 ISI 又保正交（ICI）
 ```
+
+> 注：正文按「一句话本质 / 为什么需要它 / 核心机制（一条链）/ 关键结论 / 代价与权衡」五段式书写，模板见下方第 7 节。
 
 </details>
 
 ### 4. 树层级：七棵主题树
 
 `root` 之下挂七棵主题树，构成课程层次：
+
+<details>
+<summary>点击展开：七棵主题树</summary>
 
 ```mermaid
 flowchart TB
@@ -292,35 +262,23 @@ flowchart TB
     C3 --> C31[香农公式 ★core]
     C3 --> C32[信源编码]
     C3 --> C33[信道编码]
-
-    style ROOT fill:#805ad5,color:#fff
-    style MATH fill:#16a085,color:#fff
-    style COMM fill:#2b6cb0,color:#fff
-    style DSP fill:#2b6cb0,color:#fff
-    style MOB fill:#2b6cb0,color:#fff
-    style RSP fill:#2b6cb0,color:#fff
-    style EMF fill:#2b6cb0,color:#fff
-    style NET fill:#2b6cb0,color:#fff
-    style M21 fill:#b7791f,color:#fff
-    style M31 fill:#b7791f,color:#fff
-    style M32 fill:#b7791f,color:#fff
-    style M4 fill:#b7791f,color:#fff
-    style C31 fill:#b7791f,color:#fff
 ```
 
+</details>
+
 课程层次（通信工程整体框架，反映在树结构中）：
+
+<details>
+<summary>点击展开：课程层次</summary>
 
 ```mermaid
 flowchart LR
     M["数学地基<br/>微积分 / 线代 / 概统 + 复变<br/>（math-principles，2026-08 建树）"] --> T["工具课 · 分析工具<br/>信号与系统 + DSP（微积分）<br/>随机信号处理（概统）"]
     T --> C["通信原理<br/>绝对核心（系统框架）"]
     C --> A["应用外延<br/>移动通信 / 高频电路 / 计网 / 电磁场天线"]
-
-    style M fill:#16a085,color:#fff
-    style T fill:#2f855a,color:#fff
-    style C fill:#805ad5,color:#fff
-    style A fill:#2b6cb0,color:#fff
 ```
+
+</details>
 
 ### 5. links（Wiki 连接）设计
 
@@ -335,15 +293,16 @@ flowchart LR
 | 对偶 | 数学上的对偶关系 | 信源编码 ↔ 信道编码 |
 | 区分 | 易混概念的区别 | 数据报 ↔ 虚电路 |
 
+<details>
+<summary>点击展开：links 跨树示例</summary>
+
 ```mermaid
 flowchart LR
-    MOB["OFDM<br/>（移动通信树）"] -.->|应用| DSP["FFT<br/>（DSP 树）"]
-    EQ["均衡器<br/>（通信原理树）"] -.->|支撑| MP["最小相位<br/>（DSP 树）"]
-    style MOB fill:#2b6cb0,color:#fff
-    style EQ fill:#b7791f,color:#fff
-    style DSP fill:#2f855a,color:#fff
-    style MP fill:#2f855a,color:#fff
+    MOB["OFDM（移动通信树）"] -.->|应用| DSP["FFT（DSP 树）"]
+    EQ["均衡器（通信原理树）"] -.->|支撑| MP["最小相位（DSP 树）"]
 ```
+
+</details>
 
 > **关键价值**：links 能救回「关键词完全不重合、但语义强相关」的节点——纯关键词检索匹配不到「均衡器」与「最小相位」的关联，links 沿图一跳即可补上。全库共 **316 条连接，其中 105 条跨树连接**（另有 7 条为 root 到七棵主题树的层级连接）。
 
@@ -359,6 +318,9 @@ flowchart LR
 
 **为何需要 cot**：让 AI 注入知识时得到「完整推理路径」而非「孤立结论」，从而能**推导出正确的下游结论**。以香农公式节点为例：
 
+<details>
+<summary>点击展开：香农公式的 cot 推理链</summary>
+
 ```text
 origin:   "怎么量化信息量？信道到底能传多少？"
 reasoning:
@@ -372,6 +334,8 @@ reasoning:
   7. 带宽与信噪比可互换：深空通信 S/N 极低，用超宽带宽稀释
 conclusion: "信道容量是信息论给出的上限；根本限制是噪声"
 ```
+
+</details>
 
 ### 7. 结论式写法（内容模板）
 
@@ -403,12 +367,6 @@ flowchart LR
     B --> C["③ LLM 精挑"]
     C --> D["④ 注入答题"]
     D --> E["答案"]
-    style Q fill:#805ad5,color:#fff
-    style A fill:#2f855a,color:#fff
-    style B fill:#2f855a,color:#fff
-    style C fill:#b7791f,color:#fff
-    style D fill:#2f855a,color:#fff
-    style E fill:#2b6cb0,color:#fff
 ```
 
 ### 2. 检索方案演进史
@@ -478,12 +436,6 @@ flowchart LR
     KB --> J
     J --> G["对比增益"]
     G --> R["重复实验<br/>压噪声"]
-    style Q fill:#805ad5,color:#fff
-    style RAW fill:#2b6cb0,color:#fff
-    style KB fill:#2b6cb0,color:#fff
-    style J fill:#b7791f,color:#fff
-    style G fill:#2f855a,color:#fff
-    style R fill:#2f855a,color:#fff
 ```
 
 1. **多模型对照**：DeepSeek + Qwen3（8B/14B/32B）+ GLM-5.2，覆盖 8B 到大模型全档
@@ -504,17 +456,7 @@ flowchart LR
 
 > 注：本表口径与「检索方案研究 → top-K 扫描」的纯程序候选覆盖率不同（后者不经过 LLM 精挑），两表不可直接横向比较。
 
-**模型增益（116 题全量重跑，method F，裸跑 vs 加知识库）**：
-
-| 模型 | 116 题整体增益 | 反直觉子集增益 |
-|------|:---:|:---:|
-| Qwen3-14B | +0.698 | +1.067 |
-| Qwen3-8B | +0.569 | +0.667 |
-| DeepSeek | +0.467 | +0.800 |
-| Qwen3-32B | +0.427 | +0.533 |
-| GLM-5.2 | +0.319 | +0.467 |
-
-> 2026-08-22 全量重跑数据（此前 8B/GLM 裸跑缺失已补齐）；评分口径详见顶部「核心结果」与「评测可信度」。
+**模型增益（116 题全量重跑，method F，裸跑 vs 加知识库）**：完整表格、数据口径与解读见顶部 [🎯 核心结果](#核心结果)，此处不重复。
 
 **关键结论**：
 
@@ -522,59 +464,43 @@ flowchart LR
 - 📈 **小档模型增益更大**（14B +0.698 / 8B +0.569 > 32B +0.427 / GLM +0.319），与「模型越大增益越大」的常见直觉相反
 - 🎯 在反直觉难题（严格裁判）上，增益进一步放大至 **+1.067**（14B），验证「题目越难、知识库价值越大」
 
----
+### 4. 评测可信度：为什么这些增益是真的
 
-## 📁 项目结构
+增益数字的可靠性直接决定实验结论的可信度。本节说明评分维度（完整度 / 正确度 / 逻辑性）、排除常见测量陷阱（尤其 LLM 裁判的长度偏见），并如实列出已知局限。
 
-```text
-knowledge-base/
-├── knowledge-v2/            # 知识库本体（核心）
-│   ├── nodes/               # 85 个 .md 节点（每个 = 一个知识点）
-│   └── _meta/tree.json      # 树结构索引（build_tree.py 自动生成）
-├── benchmark/               # 评测体系
-│   ├── questions_full.json  # 116 题完整题库
-│   ├── questions_fuzzy.json # 20 道模糊大问题专项 benchmark（fuzzy_hub_rag 用）
-│   ├── multiturn_questions.json  # 44 组多轮追问题库
-│   ├── 评测报告_*.html      # 可视化评测报告
-│   └── results/             # 评测原始数据（jsonl）
-├── tools/                   # 工具脚本
-│   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分，最终方案 select_nodes_final）
-│   ├── eval_followup.py     # 多轮追问评测（baseline vs 插件）
-│   ├── multiturn_rag/
-│   │   └── followup_rag.py  # 多轮追问记忆插件（FollowupRAG + Session）
-│   ├── fuzzy_hub_rag/       # 模糊大问题粗粒度匹配（benchmark + 5 策略 + 实验报告）
-│   ├── update_readme_stats.py  # 自动同步 README 知识库统计
-│   ├── build_tree.py        # 生成树结构索引
-│   ├── kb_lint.py           # 知识库完整性校验
-│   └── archive/             # 历史实验脚本/题库（归档，仅供参考）
-├── review/                  # 复习出题插件（Streamlit，只读知识库）
-├── skills/kb-ingest/        # 文档吸收 skill 操作规程（Word/txt → 知识库）
-└── docs/                    # 设计文档（01-07）
-```
+#### 4.1 评分维度：完整度、正确度、逻辑性
 
----
+裁判（qwen-max，温度 0）按标准答案打分（0-10），评分机制如下：
 
-## 🚀 快速开始
+![裁判评分机制：正确度 / 完整度 / 逻辑性](benchmark/scoring_rules.png)
 
-```bash
-# 0. 安装依赖（LLM 调用 + YAML 解析）
-pip install -r tools/requirements.txt
+> 反直觉难题正是测「逻辑性/深刻度」：裸跑模型普遍卡在 6 分（只答表面规律），注入知识库的 **cot 思维链**后答出深层机制 → 8-9 分，这是反直觉子集增益最大（14B +1.067）的直接原因。
 
-# 1. 校验知识库完整性
-python tools/kb_lint.py
+#### 4.2 长度偏见检查（LLM-as-judge 最大的质疑点）
 
-# 2. 生成树结构索引（新增/修改节点后）
-python tools/build_tree.py
+裁判会不会"看答案长就给高分"？用本轮数据实测排除：
 
-# 3. 同步 README 知识库统计（新增/删除节点后）
-python tools/update_readme_stats.py
+| 模型 | 裸跑平均长度 | +知识库平均长度 | 结论 |
+|------|:---:|:---:|------|
+| Qwen3-14B | 683 字符 | 628 字符（**更短**，0.92x） | 答案更短却分数更高 → 排除长度骗分 |
+| DeepSeek | 706 字符 | 694 字符（几乎不变，0.98x） | 长度无变化但分数提升 → 同上 |
 
-# 4. 跑单轮评测（需配置 API key，见 tools/.env.example）
-python tools/kb_benchmark.py --limit 5   # 先跑 5 题测试；全量去掉 --limit
+#### 4.3 提升模式分析
 
-# 5. 跑多轮追问评测（对比 baseline vs 插件）
-python tools/eval_followup.py --limit 5
-```
+反直觉 15 题逐题对比，增益是「多点小提升」（14B 以 +1~+2 为主，仅 1 题 -2 的裁判波动），而非少数题暴涨——说明知识库的帮助是均匀、可复现的，不是个别题碰巧命中。
+
+#### 4.4 实验卫生措施
+
+- **同轮同裁判**：裸跑 vs +知识库在**同一轮、同一个裁判**下打分，杜绝跨轮次裁判波动（实测跨轮次裸跑基线有 ±0.5 的自然波动，故只承认轮内增益，跨轮次分数不可直接比）；
+- **测量卫生**：选点失败标记 `degraded`（裸跑成绩不得冒充 +知识库）；API 调用失败（`[ERROR]`）不打分、以 -1 剔除出统计；裁判输出类型校验（score 必须是数字，防异常污染）；
+- **失败重试**：每次调用 2 次重试 + 180s 超时（慢模型如 8B/32B 单独跑或分段并行，避免限流丢数据）。
+
+#### 4.5 已知局限
+
+- 反直觉子集仅 15 题，均值受单题裁判波动影响（±0.3 属正常范围）；
+- qwen-max 裁判自身有非确定性（温度 0 但非严格确定），跨轮次分数不完全可比；
+- 本表为 **method F（最终检索方案）** 口径，与早期 method D 的历史结果不直接可比；
+- 题目覆盖通信原理 / DSP / 移动通信 / 随机信号 / 计算机网络五门课，知识库对题目领域外的泛化能力未验证。
 
 ---
 
@@ -590,12 +516,6 @@ flowchart LR
     A --> M["自评掌握度"]
     M --> DB[("SQLite<br/>学习记录")]
     DB -.-> G
-    style G fill:#2b6cb0,color:#fff
-    style N fill:#2f855a,color:#fff
-    style Q fill:#2f855a,color:#fff
-    style A fill:#2f855a,color:#fff
-    style M fill:#b7791f,color:#fff
-    style DB fill:#805ad5,color:#fff
 ```
 
 **两大模块：**
@@ -628,13 +548,6 @@ flowchart LR
     H -->|是| M["历史优先并入<br/>上一轮节点 + gate 带上下文"]
     M --> G["注入答题"]
     N --> G
-    style Q fill:#805ad5,color:#fff
-    style F fill:#b7791f,color:#fff
-    style H fill:#b7791f,color:#fff
-    style M fill:#16a085,color:#fff
-    style N fill:#2f855a,color:#fff
-    style G fill:#2b6cb0,color:#fff
-    style S fill:#95a5a6,color:#fff
 ```
 
 > 分档口径：**D1** 裸指代（"那反过来呢"，≤8 字强依赖）· **D2** 短追问 · **D3** 中等 · **D4** 长自包含（>25 字）· **D5** 新话题（负例）· **chitchat** 闲聊（负例）。完整定义见 [docs/07-多轮追问技术报告.md](docs/07-多轮追问技术报告.md)。
@@ -673,11 +586,6 @@ flowchart LR
     H -->|last_ids=子孙节点| F["追问轮 followup_rag 承接<br/>历史并入候选池"]
     F --> N
     N --> A
-    style R fill:#b7791f,color:#fff
-    style H fill:#2f855a,color:#fff
-    style N fill:#2b6cb0,color:#fff
-    style F fill:#805ad5,color:#fff
-    style A fill:#16a085,color:#fff
 ```
 
 **benchmark-first 定案**（专项 benchmark：20 模糊题 + 116 题库抽 20 对照组，完整技术报告见 [docs/08-模糊大问题粗粒度匹配技术报告.md](docs/08-模糊大问题粗粒度匹配技术报告.md)，过程时间线见 [tools/fuzzy_hub_rag/README.md](tools/fuzzy_hub_rag/README.md)）：
@@ -717,12 +625,6 @@ flowchart LR
     N --> W
     T --> W
     W --> G["④ 三道闸门入库<br/>kb_lint → build_tree → update_readme_stats"]
-
-    style U fill:#2d3748,color:#fff
-    style S fill:#2b6cb0,color:#fff
-    style C fill:#b7791f,color:#fff
-    style W fill:#2f855a,color:#fff
-    style G fill:#16a085,color:#fff
 ```
 
 **给 AI 助手的一句话用法**：先读 `skills/kb-ingest/SKILL.md`，再给出文档路径；助手会先提交分流表等人确认，再逐节点成文，最后自跑三道闸门校验通过才算完成。
@@ -733,6 +635,36 @@ flowchart LR
 |:---|:---|
 | `skills/kb-ingest/SKILL.md` | 完整操作规程：上下文构建、四类分流判定、写作规范（五段式）、入库闸门 |
 | `knowledge-v2/_meta/node-spec.md` | 节点格式规范 v1.1（八项 frontmatter + 五段式正文模板） |
+
+---
+
+## 📁 项目结构
+
+```text
+knowledge-base/
+├── knowledge-v2/            # 知识库本体（核心）
+│   ├── nodes/               # 85 个 .md 节点（每个 = 一个知识点）
+│   └── _meta/tree.json      # 树结构索引（build_tree.py 自动生成）
+├── benchmark/               # 评测体系
+│   ├── questions_full.json  # 116 题完整题库
+│   ├── questions_fuzzy.json # 20 道模糊大问题专项 benchmark（fuzzy_hub_rag 用）
+│   ├── multiturn_questions.json  # 44 组多轮追问题库
+│   ├── 评测报告_*.html      # 可视化评测报告
+│   └── results/             # 评测原始数据（jsonl）
+├── tools/                   # 工具脚本
+│   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分，最终方案 select_nodes_final）
+│   ├── eval_followup.py     # 多轮追问评测（baseline vs 插件）
+│   ├── multiturn_rag/
+│   │   └── followup_rag.py  # 多轮追问记忆插件（FollowupRAG + Session）
+│   ├── fuzzy_hub_rag/       # 模糊大问题粗粒度匹配（benchmark + 5 策略 + 实验报告）
+│   ├── update_readme_stats.py  # 自动同步 README 知识库统计
+│   ├── build_tree.py        # 生成树结构索引
+│   ├── kb_lint.py           # 知识库完整性校验
+│   └── archive/             # 历史实验脚本/题库（归档，仅供参考）
+├── review/                  # 复习出题插件（Streamlit，只读知识库）
+├── skills/kb-ingest/        # 文档吸收 skill 操作规程（Word/txt → 知识库）
+└── docs/                    # 设计文档（01-07）
+```
 
 ---
 
