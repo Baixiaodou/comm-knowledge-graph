@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS interview_turns (
 CREATE INDEX IF NOT EXISTS idx_it_session ON interview_turns(session_id);
 CREATE INDEX IF NOT EXISTS idx_is_status   ON interview_sessions(status);
 
+-- ===== 判定校准官（评审官）结果：一场一条 =====
+CREATE TABLE IF NOT EXISTS interview_reviews (
+    session_id   TEXT PRIMARY KEY,
+    review_json  TEXT NOT NULL,          -- JSON: {verdict_review,portrait,plan,next_suggestion}
+    created_at   TEXT
+);
+
 -- ===== 旧版刷题表（兼容历史 db，不再使用）=====
 CREATE TABLE IF NOT EXISTS questions (
     question_id TEXT PRIMARY KEY,

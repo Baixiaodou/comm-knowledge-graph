@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 
 import config
 import prompts_interview as pi
+import prompts_reviewer as pr
 from db import get_conn
 
 VERDICTS = ("correct", "partial", "wrong", "unanswered", "offtopic")
@@ -168,7 +169,137 @@ def set_excluded(sid: str, excluded: bool):
 def delete_session(sid: str):
     with get_conn() as c:
         c.execute("DELETE FROM interview_turns WHERE session_id=?", (sid,))
+        c.execute("DELETE FROM interview_reviews WHERE session_id=?", (sid,))
         c.execute("DELETE FROM interview_sessions WHERE session_id=?", (sid,))
+
+
+# ---------------- 判定校准官（评审官） ----------------
+
+def get_review(sid: str) -> Optional[dict]:
+    """已生成的评审结果；未生成返回 None。"""
+    with get_conn() as c:
+        row = c.execute(
+            "SELECT review_json FROM interview_reviews WHERE session_id=?", (sid,)
+        ).fetchone()
+    if not row:
+        return None
+    try:
+        return json.loads(row["review_json"])
+    except (TypeError, ValueError):
+        return None
+
+
+def save_review(sid: str, review: dict):
+    with get_conn() as c:
+        c.execute(
+            "INSERT OR REPLACE INTO interview_reviews(session_id, review_json, created_at) VALUES(?,?,?)",
+            (sid, json.dumps(review, ensure_ascii=False), _now()),
+        )
+
+
+def _review_materials(sid: str) -> dict:
+    """组装评审官复审材料：逐题记录文本 + 涉及节点原文。"""
+    session = get_session(sid)
+    turns = get_turns(sid)
+    cfg = json.loads(session["config_json"])
+    lines, node_ids = [], []
+    for t in turns:
+        try:
+            j = json.loads(t["judgment"]) if t["judgment"] else {}
+        except (TypeError, ValueError):
+            j = {}
+        nids = json.loads(t["node_ids"] or "[]")
+        node_ids.extend(nids)
+        node_ids.extend(j.get("weak_nodes") or [])
+        verdict = j.get("verdict", "?")
+        lines.append(
+            f"Q{t['round_no']}（考察节点: {', '.join(nids) or '—'}）\n"
+            f"  问题：{t['question']}\n"
+            f"  考生回答：{(t['user_answer'] or '（未作答/跳过）')[:400]}\n"
+            f"  面试官判定：{pr._fmt_verdict(verdict)}\n"
+            f"  面试官点评：{j.get('comment', '')[:200]}\n"
+        )
+    blocks = []
+    for nid in dict.fromkeys(node_ids):  # 去重保序
+        n = _nodes.get(nid)
+        if not n:
+            continue
+        body = (n.body or "")[:_PER_NODE_CAP]
+        if len(n.body or "") > _PER_NODE_CAP:
+            body += "\n……（正文过长已截断）"
+        blocks.append(f"[节点 {nid}「{n.title}」]\n摘要：{n.summary}\n{body}")
+    return {
+        "turns_text": "\n".join(lines),
+        "nodes_text": "\n\n".join(blocks),
+        "cfg": cfg,
+    }
+
+
+def build_review(sid: str) -> dict:
+    """生成（或返回已生成的）判定校准与诊断。
+
+    评审官为独立 LLM 角色：复核逐题判定 + 产出画像/复习计划。
+    仅 finished 场次可评审；已生成过则直接返回（不重复消耗 LLM）。
+    失败抛异常由 UI 提示，不影响主流程与图谱（图谱仍以面试官判定为准）。
+    """
+    existing = get_review(sid)
+    if existing:
+        return existing
+    session = get_session(sid)
+    if not session:
+        raise ValueError("场次不存在")
+    if session["status"] != "finished":
+        raise ValueError("面试未结束，暂不能生成评审")
+    cfg = json.loads(session["config_json"])
+    mats = _review_materials(sid)
+    if not mats["turns_text"].strip():
+        raise ValueError("本场没有可评审的答题记录")
+    system = pr.system_message()
+    user = pr.user_message(
+        session["scope_title"], cfg.get("depth", ""), cfg.get("style", ""),
+        mats["turns_text"], mats["nodes_text"],
+    )
+    data = _llm_json(system, user, temperature=0.2)
+
+    # ---- 规整输出 ----
+    vr = []
+    for item in data.get("verdict_review") or []:
+        if not isinstance(item, dict):
+            continue
+        orig, sugg = item.get("original"), item.get("suggested")
+        if orig not in VERDICTS or sugg not in VERDICTS:
+            continue
+        vr.append(
+            {
+                "round_no": int(item.get("round_no") or 0),
+                "original": orig,
+                "suggested": sugg,
+                "reason": str(item.get("reason") or "")[:300],
+            }
+        )
+    plan = []
+    for item in (data.get("plan") or [])[:5]:
+        if not isinstance(item, dict):
+            continue
+        nid = item.get("node_id")
+        if nid not in _nodes:
+            continue
+        plan.append(
+            {
+                "node_id": nid,
+                "title": _nodes[nid].title,
+                "why": str(item.get("why") or "")[:200],
+                "how": str(item.get("how") or "")[:300],
+            }
+        )
+    review = {
+        "verdict_review": vr,
+        "portrait": str(data.get("portrait") or "").strip(),
+        "plan": plan,
+        "next_suggestion": str(data.get("next_suggestion") or "").strip(),
+    }
+    save_review(sid, review)
+    return review
 
 
 # ---------------- 节点规划 ----------------
@@ -193,6 +324,59 @@ def content_nodes(root_id: str) -> List[str]:
             ids.append(cur)
         queue.extend(_children.get(cur, []))
     return [nid for nid in ids if _nodes[nid].type in _CONTENT_TYPES]
+
+
+def weak_priorities(scope_root: str) -> List[tuple]:
+    """跨场次薄弱聚合：该子树范围内、全部已结束(excluded=0)场次中被判定
+    答错/未答上/跑题的节点，按命中次数倒序返回 [(node_id, count), ...]。
+
+    这是"记忆驱动复习闭环"的数据底座：开新场时把历史薄弱点排到候选最前复测。
+    """
+    content = set(content_nodes(scope_root))
+    if not content:
+        return []
+    cnt: Counter = Counter()
+    with get_conn() as c:
+        sids = [
+            r[0]
+            for r in c.execute(
+                "SELECT session_id FROM interview_sessions WHERE status='finished' AND excluded=0"
+            ).fetchall()
+        ]
+    for sid in sids:
+        for t in get_turns(sid):
+            try:
+                j = json.loads(t["judgment"]) if t["judgment"] else {}
+            except (TypeError, ValueError):
+                continue
+            if j.get("verdict") in WEAK_VERDICTS:
+                for nid in json.loads(t["node_ids"] or "[]"):
+                    if nid in content:
+                        cnt[nid] += 1
+                for w in j.get("weak_nodes") or []:
+                    if w in content:
+                        cnt[w] += 1
+    return cnt.most_common()
+
+
+def _scope_content(scope_root: str, weak_first: bool = True) -> List[str]:
+    """范围内容节点，weak_first=True 时把历史薄弱节点提到最前（优先复测）。"""
+    content = content_nodes(scope_root)
+    if weak_first:
+        weak_set = {nid for nid, _ in weak_priorities(scope_root)}
+        if weak_set:
+            content = [n for n in content if n in weak_set] + [n for n in content if n not in weak_set]
+    return content
+
+
+def _weak_text(scope_root: str) -> str:
+    """把历史薄弱点格式化为给面试官的提示文本（最多列 8 条）。"""
+    lines = []
+    for nid, cnt in weak_priorities(scope_root)[:8]:
+        nd = _nodes.get(nid)
+        if nd:
+            lines.append(f"- 「{nd.title}」[{nid}]：历史答错 {cnt} 次")
+    return "\n".join(lines)
 
 
 def _candidates(content: List[str], used: set, k: int = _CAND_PER_ROUND) -> List[str]:
@@ -250,11 +434,16 @@ def ask_first(sid: str) -> dict:
     """开场：出第 1 题并落盘（未作答）。"""
     session = get_session(sid)
     cfg = json.loads(session["config_json"])
-    content = content_nodes(session["scope_root"])
+    weak_first = cfg.get("weak_first", True)
+    content = _scope_content(session["scope_root"], weak_first)
     cands = _candidates(content, set())
     if not cands:
         raise ValueError("该范围没有可出题的内容节点（core/leaf）")
-    system = pi.system_message(cfg["depth"], session["scope_title"], len(content), cfg["target_rounds"])
+    system = pi.system_message(
+        cfg["depth"], session["scope_title"], len(content), cfg["target_rounds"],
+        style=cfg.get("style", ""),
+        weak_hint=_weak_text(session["scope_root"]) if weak_first else "",
+    )
     user = pi.user_message(round_no=1, is_first=True, note_text="", candidates_text=_candidates_text(cands))
     data = _llm_json(system, user)
     q = (data.get("next_question") or "").strip()
@@ -298,7 +487,7 @@ def submit_answer(sid: str, answer: str) -> dict:
     if cur_nodes:
         used.discard(cur_nodes[0])
 
-    content = content_nodes(session["scope_root"])
+    content = _scope_content(session["scope_root"], cfg.get("weak_first", True))
     n_content = len(content)
     force_end = (answered_before + 1) >= target
     cands = [] if force_end else _candidates(content, used)
@@ -308,7 +497,10 @@ def submit_answer(sid: str, answer: str) -> dict:
     else:
         cands_text = _candidates_text(cands)
 
-    system = pi.system_message(cfg["depth"], session["scope_title"], n_content, target)
+    system = pi.system_message(
+        cfg["depth"], session["scope_title"], n_content, target,
+        style=cfg.get("style", ""),
+    )
     user = pi.user_message(
         round_no=current["round_no"] + 1,
         is_first=False,

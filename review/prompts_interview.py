@@ -14,7 +14,7 @@
   "reason":         "收束原因（可选）"
 }
 """
-from config import DEPTH_DESC
+from config import DEPTH_DESC, STYLE_DESC
 
 _OUTPUT_SCHEMA = """你必须只输出一个 JSON 对象，不要输出任何其它文字（不要 markdown 围栏、不要解释）。JSON 字段如下：
 {
@@ -58,7 +58,49 @@ def _progress_hint(n_content: int, target_rounds: int) -> str:
     )
 
 
-def system_message(depth: str, scope_title: str, n_content: int, target_rounds: int) -> str:
+def _style_instruction(style: str) -> str:
+    """面试官风格指令：管"怎么问/语气"，与深度档正交；判定标准不变（不因风格松/紧）。"""
+    if not style or style not in STYLE_DESC:
+        return ""
+    tone = STYLE_DESC[style]
+    habits = {
+        "温和引导": (
+            "- 考生卡壳或答偏时，可以给一个小提示或换更生活化的角度问，帮他进入状态；\n"
+            "- 点评语气温和，但判定仍严格按原文依据，不因语气好而放水。"
+        ),
+        "学院派严谨": (
+            "- 提问与追问紧扣术语与定义：考生用了名词就让他解释（\"你刚说的 X 具体指什么？和 Y 的区别？\"）；\n"
+            "- 表述含糊必须追问澄清，逻辑链条断点要指出来让考生补上。"
+        ),
+        "压力测试": (
+            "- 考生答出结论后追问边界与反例：\"这个结论在什么条件下不成立？\"\"为什么不用别的方案？\"\n"
+            "- 允许考生承认不知道，但会追问\"你会怎么去把它搞懂\"，考察学习路径与诚实。"
+        ),
+    }
+    return f"""## 本场面试官风格：{style}
+{tone}
+{habits.get(style, "")}
+（风格只影响提问方式与点评语气，判定仍严格按【判定规则】执行，不因风格放松或加严。）"""
+
+
+def _weak_hint(weak_text: str) -> str:
+    """跨场次薄弱提示：把考生历史薄弱点注入面试官，要求优先复测。"""
+    if not weak_text:
+        return ""
+    return f"""## 考生历史薄弱点（跨场次记忆，重点复测对象）
+该生此前的面试中，在以下知识点答错过（按严重度排序）。请把它们作为本轮优先考察对象：
+{weak_text}
+注意：优先考察 ≠ 只考这些。答对后确认已补上即可，其余知识点照常分散覆盖。"""
+
+
+def system_message(
+    depth: str,
+    scope_title: str,
+    n_content: int,
+    target_rounds: int,
+    style: str = "",
+    weak_hint: str = "",
+) -> str:
     """面试官 SYSTEM 提示词。"""
     return f"""你是研究生复试的专业课面试官，正在为一位报考通信/电子信息方向的考生做「{scope_title}」科目的模拟面试。
 
@@ -70,6 +112,8 @@ def system_message(depth: str, scope_title: str, n_content: int, target_rounds: 
 2. 一次只问一个问题；得到考生回答后再判定并决定下一步（追问 / 换题 / 收束）。
 3. 全程使用中文提问；问题要像真人面试官那样口语化、有层次，不要用"请简述……"的书面套话堆砌。
 {_depth_instruction(depth)}
+{_style_instruction(style)}
+{_weak_hint(weak_hint)}
 {_JUDGE_RULE}
 {_progress_hint(n_content, target_rounds)}
 {_OUTPUT_SCHEMA}"""

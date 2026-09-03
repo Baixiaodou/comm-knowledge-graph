@@ -130,6 +130,62 @@ def show_comment_enabled(cfg):
     return cfg.get("review_mode", "结束后一起看") != "只判分不点评"
 
 
+def render_review(review):
+    """展示评审官诊断结果。"""
+    st.markdown("### 🔎 评审官诊断与判定校准")
+    st.caption(
+        "独立评审角色在面试结束后复核（不参与过程）：校准可疑判定 + 整体画像 + 按优先级复习计划。"
+    )
+    if review.get("portrait"):
+        st.markdown(f"**整体画像**：{review['portrait']}")
+    vrs = review.get("verdict_review") or []
+    if vrs:
+        st.markdown("**可疑判定复核**（建议仅供参考；图谱掌握度仍以面试官判定为准）")
+        rows = [
+            {
+                "题号": f"Q{v.get('round_no', '?')}",
+                "原判定": config.VERDICT_CN.get(v.get("original"), v.get("original")),
+                "校准建议": config.VERDICT_CN.get(v.get("suggested"), v.get("suggested")),
+                "理由": v.get("reason", ""),
+            }
+            for v in vrs
+        ]
+        st.table(rows)
+    else:
+        st.success("评审官复核：逐题判定公允，无需要改判的题。")
+    plan = review.get("plan") or []
+    if plan:
+        st.markdown("**复习计划（按优先级）**")
+        for p in plan:
+            st.markdown(
+                f"- **{p.get('title', p.get('node_id'))}** [{p.get('node_id')}]："
+                f"{p.get('why', '')} → *{p.get('how', '')}*"
+            )
+    if review.get("next_suggestion"):
+        st.caption(f"**下次面试建议**：{review['next_suggestion']}")
+
+
+def _render_review_block(sid):
+    """报告页评审区：已有评审直接展示；否则给生成按钮（约 1 次调用，失败不阻塞）。"""
+    review = interview.get_review(sid)
+    if review:
+        render_review(review)
+        return
+    if st.button(
+        "🔎 生成评审官诊断（校准判定 + 复习计划）",
+        key=f"gen_rev_{sid}",
+        help="由独立评审角色复核逐题判定（挑判松/判严），并给出整体画像与按优先级排的复习计划。约 1 次调用。",
+    ):
+        with st.spinner("评审官复核中…"):
+            try:
+                interview.build_review(sid)
+                st.rerun()
+            except interview.LLMNotConfigured as e:
+                st.error(str(e))
+            except Exception as e:  # noqa: BLE001
+                st.error(f"评审生成失败：{e}")
+
+
 # ---------------- 报告渲染（Tab1 结束后 / Tab3 历史共用） ----------------
 def render_report(rpt):
     vc = rpt["verdict_cnt"]
@@ -142,12 +198,16 @@ def render_report(rpt):
     c3.metric("评级", rpt["grade"])
     c4.metric("覆盖节点", f"{rpt['coverage']['asked']}/{rpt['coverage']['total']}")
     st.caption(
-        f"深度「{cfg.get('depth')}」· 目标 ~{cfg.get('target_rounds')} 题"
+        f"深度「{cfg.get('depth')}」· 风格「{cfg.get('style') or '默认'}」· 目标 ~{cfg.get('target_rounds')} 题"
         + (f"（约 {mins} 分钟）" if mins else "")
         + f" · 答对 {vc['correct']} / 部分 {vc['partial']} / "
         f"答错 {vc['wrong']} / 未答上 {vc['unanswered']} / 跑题 {vc['offtopic']}"
     )
     st.markdown(f"**{rpt['grade_cn']}**")
+
+    # —— 判定校准官评审区（仅已结束场次；报告与历史 Tab 共用本函数故两处都出现）——
+    if rpt["session"]["status"] == "finished":
+        _render_review_block(rpt["session"]["session_id"])
 
     if rpt["weak_nodes"]:
         st.markdown("#### 🔴 薄弱知识点（建议先补这些节点原文）")
@@ -180,23 +240,31 @@ def render_setup(disabled):
         "答错下探查基础）；过程不泄露对错，结束后出结业报告并给图谱着色。"
     )
     with st.form("iv_setup_form"):
-        c1, c2, c3, c4 = st.columns([2.2, 1, 1, 1.4])
         cur = st.session_state.get("iv_scope_root", "root")
         idx = order_ids.index(cur) if cur in order_ids else 0
-        subject_id = c1.selectbox(
+        subject_id = st.selectbox(
             "科目范围（含其全部子节点）", order_ids, index=idx, format_func=node_label, key="iv_scope_root"
         )
-        duration = c2.selectbox(
+        c1, c2, c3, c4 = st.columns([1, 1.2, 1.2, 1.4])
+        duration = c1.selectbox(
             "面试时长", config.DURATION_CHOICES, index=1,
             format_func=lambda d: f"{d} 分钟", key="iv_dur",
         )
-        depth = c3.selectbox(
+        depth = c2.selectbox(
             "追问深度", config.INTERVIEW_DEPTHS, index=1, key="iv_depth"
+        )
+        style = c3.selectbox(
+            "面试官风格", config.INTERVIEW_STYLES, index=0, key="iv_style"
         )
         review_mode = c4.selectbox(
             "点评时机", config.REVIEW_MODES, index=0, key="iv_rm"
         )
         st.caption(f"**{depth}**：{config.DEPTH_DESC.get(depth, '')}")
+        st.caption(f"**{style}**：{config.STYLE_DESC.get(style, '')}")
+        weak_first = st.checkbox(
+            "优先复测上次面试答错的知识点（跨场次记忆）", value=True, key="iv_weak",
+            help="开新场时自动读历史场次，把答错/没答上的知识点排到最前优先复测，形成复习闭环。",
+        )
         st.caption(f"目标题数：约 {config.DURATION_ROUNDS[duration]} 题 · 建议每题作答 ≤ 2 分钟 · "
                    f"「{review_mode}」模式")
         submitted = st.form_submit_button("🎬 开始面试", type="primary", disabled=disabled)
@@ -205,8 +273,10 @@ def render_setup(disabled):
     if submitted and llm_ready:
         cfg = {
             "depth": depth,
+            "style": style,
             "target_rounds": config.DURATION_ROUNDS[duration],
             "review_mode": review_mode,
+            "weak_first": bool(weak_first),
         }
         sid = interview.new_session(subject_id, nodes[subject_id].title, cfg)
         st.session_state["iv_sid"] = sid
@@ -233,7 +303,7 @@ def render_answer_panel(sid, s):
     answered_before = len([x for x in turns if x["user_answer"] is not None])
 
     st.subheader(f"面试进行中 · {s['scope_title']}")
-    st.caption(f"深度「{cfg.get('depth')}」· 目标 ~{target} 题 · 点评「{cfg.get('review_mode')}」")
+    st.caption(f"深度「{cfg.get('depth')}」· 风格「{cfg.get('style') or '默认'}」· 目标 ~{target} 题 · 点评「{cfg.get('review_mode')}」")
     if target > 0:
         st.progress(min(1.0, answered_before / target))
     st.markdown("---")
