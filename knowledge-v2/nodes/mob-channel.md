@@ -12,6 +12,8 @@ links:
     relation: "小尺度衰落：多径 + 多普勒（随位置/时间快变化）"
   - id: comm-isi
     relation: "频率选择性衰落最终导致码间串扰 ISI，与通信原理的信道破坏同源"
+  - id: emf-wave
+    relation: "直射/反射/绕射/散射是平面波与媒质/障碍物的相互作用，是无线信道的物理源头"
 created: 2026-08-15
 updated: 2026-08-15
 ---

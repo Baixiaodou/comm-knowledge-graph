@@ -12,6 +12,8 @@ links:
     relation: "路径损耗和阴影正是蜂窝组网、衰落储备要对抗的东西"
   - id: emf-principles
     relation: "路径损耗是电磁波自由空间传播的能量扩散"
+  - id: emf-antenna
+    relation: "路径损耗的定量公式就是 Friis：天线增益参与链路预算"
 created: 2026-08-15
 updated: 2026-08-15
 ---

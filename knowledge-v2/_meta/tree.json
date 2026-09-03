@@ -135,7 +135,7 @@
       "parent": "comm-principles",
       "depth": 2,
       "type": "leaf",
-      "link_count": 3,
+      "link_count": 5,
       "has_cot": false,
       "children": []
     },
@@ -339,10 +339,61 @@
         "dsp-laplace-z"
       ]
     },
+    "emf-antenna": {
+      "title": "天线基础",
+      "parent": "emf-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 5,
+      "has_cot": false,
+      "children": []
+    },
+    "emf-polarization": {
+      "title": "波的极化",
+      "parent": "emf-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 4,
+      "has_cot": false,
+      "children": []
+    },
     "emf-principles": {
       "title": "电磁场与电磁波",
       "parent": "root",
       "depth": 1,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": [
+        "emf-antenna",
+        "emf-polarization",
+        "emf-s-parameters",
+        "emf-transmission-line",
+        "emf-wave"
+      ]
+    },
+    "emf-s-parameters": {
+      "title": "S参数（散射参数）",
+      "parent": "emf-principles",
+      "depth": 2,
+      "type": "leaf",
+      "link_count": 4,
+      "has_cot": false,
+      "children": []
+    },
+    "emf-transmission-line": {
+      "title": "传输线理论",
+      "parent": "emf-principles",
+      "depth": 2,
+      "type": "core",
+      "link_count": 3,
+      "has_cot": true,
+      "children": []
+    },
+    "emf-wave": {
+      "title": "均匀平面波",
+      "parent": "emf-principles",
+      "depth": 2,
       "type": "core",
       "link_count": 3,
       "has_cot": true,
@@ -490,7 +541,7 @@
       "parent": "mob-principles",
       "depth": 2,
       "type": "hub",
-      "link_count": 3,
+      "link_count": 4,
       "has_cot": false,
       "children": [
         "mob-large-scale",
@@ -502,7 +553,7 @@
       "parent": "mob-anti-fading",
       "depth": 3,
       "type": "core",
-      "link_count": 3,
+      "link_count": 4,
       "has_cot": true,
       "children": []
     },
@@ -538,7 +589,7 @@
       "parent": "mob-channel",
       "depth": 3,
       "type": "leaf",
-      "link_count": 3,
+      "link_count": 4,
       "has_cot": false,
       "children": []
     },

@@ -12,6 +12,10 @@ links:
     relation: "模拟/数字调制在电路上都走这些射频环节"
   - id: math-calculus
     relation: "功放非线性失真用泰勒展开解释：非线性项产生新频率分量（谐波/交调）"
+  - id: emf-transmission-line
+    relation: "巴伦/阻抗匹配网络是传输线理论在射频前端的落地（Z0 匹配/λ4 变换）"
+  - id: emf-s-parameters
+    relation: "射频器件指标（回波损耗/插损/隔离度）都用 S 参数表述"
 created: 2026-08-13
 updated: 2026-08-23
 ---

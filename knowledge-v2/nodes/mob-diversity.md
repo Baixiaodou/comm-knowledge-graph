@@ -12,6 +12,8 @@ links:
     relation: "分集对抗的是小尺度的快衰落（多径+多普勒导致的剧烈起伏）"
   - id: mob-mimo
     relation: "空间分集是 MIMO 的一种用法（MIMO 的空间分集模式）"
+  - id: emf-polarization
+    relation: "极化分集 = 用两个正交极化（±45°）获得两条独立衰落路径，是四种分集之一"
 cot:
   origin: "快衰落让信号时强时弱，怎么才能让接收一直保持好状态？"
   reasoning: |
