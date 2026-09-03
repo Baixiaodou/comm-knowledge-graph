@@ -53,7 +53,7 @@ class LLMNotConfigured(Exception):
 def _client():
     cfg = config.get_llm_config()
     if not cfg:
-        raise LLMNotConfigured("未配置 LLM API key（review/.env 或 tools/.env 中填 DEEPSEEK_API_KEY）")
+        raise LLMNotConfigured("未配置 LLM API key：请在页面左侧「🔑 API 配置」粘贴保存，或编辑 review/.env 后重启")
     from openai import OpenAI
 
     return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"], timeout=120), cfg["model"]

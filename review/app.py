@@ -32,6 +32,42 @@ db.init_db()
 MIN_OF_ROUNDS = {v: k for k, v in config.DURATION_ROUNDS.items()}
 
 
+# ---------------- 侧栏：API 配置（本地安全存储，不进 GitHub） ----------------
+def render_api_panel():
+    """API key 页面配置：只存本机 review/.env（.gitignore 已排除），脱敏显示，保存即生效。"""
+    with st.sidebar:
+        st.markdown("**🔑 API 配置**")
+        status = config.api_key_status()
+        if status["configured"]:
+            st.caption(f"✅ {status['provider']} · key `{status['masked']}` · 模型 `{status['model']}`")
+        else:
+            st.caption("❌ 未配置 LLM API key，面试无法开始。")
+        new_key = st.text_input(
+            "DeepSeek API Key",
+            type="password",
+            key="api_key_input",
+            placeholder="sk-… 留空则不修改",
+            help="只保存在本机 review/.env（已被 .gitignore 排除），不会上传 GitHub。",
+        )
+        with st.expander("高级（可选）"):
+            st.caption("默认 DeepSeek 官方即可，无需改动。")
+            new_base = st.text_input("Base URL", key="api_base_url", placeholder="https://api.deepseek.com")
+            new_model = st.text_input("模型", key="api_model", placeholder="deepseek-chat")
+        if st.button("💾 保存并生效"):
+            try:
+                config.save_llm_config(new_key, new_base, new_model)
+                for k in ("api_key_input", "api_base_url", "api_model"):
+                    st.session_state.pop(k, None)  # 清空明文，不留页面状态
+                st.success("已保存到本机 review/.env 并立即生效。")
+                st.rerun()
+            except ValueError as e:
+                st.error(str(e))
+        st.caption("备选：手动编辑 review/.env（重启后生效）")
+
+
+render_api_panel()
+
+
 @st.cache_data(show_spinner=False)
 def load_kb():
     ns = knowledge.load_nodes()
@@ -370,10 +406,7 @@ def render_answer_panel(sid, s):
 def render_tab_live():
     st.header("🎤 模拟面试")
     if not llm_ready:
-        st.warning(
-            "未配置 LLM API key。请在 `review/.env` 或知识库 `tools/.env` 中填写 "
-            "`DEEPSEEK_API_KEY` 后重启。"
-        )
+        st.warning("未配置 LLM API key。点击左侧栏「🔑 API 配置」粘贴你的 DeepSeek API Key 并保存即可开始（key 只存本机，不会上传）。")
         return
 
     sid = active_session_id()
