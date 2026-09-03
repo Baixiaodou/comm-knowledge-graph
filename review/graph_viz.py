@@ -1,6 +1,6 @@
 """知识图谱可视化：用 ECharts 渲染（内联本地 JS，离线可用，无第三方组件依赖）。
 
-节点颜色 = 掌握度（由 records.mastery_color 提供）；做题数显示在 tooltip。
+节点颜色 = 掌握度（由 records.mastery_color 提供）；被问次数显示在 tooltip。
 """
 import json
 from pathlib import Path
@@ -113,7 +113,7 @@ function init(){
       var d = p.data;
       var t = d.type==='core' ? '核心节点' : (d.type==='hub' ? '枢纽节点' : '叶子节点');
       var html = '<b>'+d.name+'</b> <span style="color:#999">['+d.id+']</span><br/>'
-               + '做题数：'+(d.value||0)+' · '+t;
+               + '被问次数：'+(d.value||0)+' · '+t;
       if(d.summary){ html += '<br/><span style="color:#888">'+d.summary+'</span>'; }
       return html;
     }

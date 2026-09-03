@@ -1,9 +1,11 @@
-"""SQLite 本地存储：题库 + 题目-节点绑定 + 学习记录。
+"""SQLite 本地存储：模拟面试会话 + 逐轮记录 + 节点掌握度聚合依据。
 
-三张表：
-- questions      题库（题目本体，含 type/stem/answer/analysis/source）
-- question_nodes 题目 ↔ 节点 多对多（综合题绑定多个节点）
-- review_records 学习记录（节点 + 题目 + 掌握度 + 时间 + 复习次数）
+核心表（v2 模拟面试版）：
+- interview_sessions  面试会话元信息（科目根节点 / 配置 / 状态 / 是否排除出图谱统计）
+- interview_turns     逐轮记录（问题 / 用户回答 / 判定 JSON / 涉及节点）
+
+旧版刷题表（questions / question_nodes / review_records）定义保留，
+仅用于兼容历史 db 文件，新代码不再读写它们。
 """
 import sqlite3
 from contextlib import contextmanager
@@ -11,6 +13,33 @@ from contextlib import contextmanager
 import config
 
 SCHEMA = """
+-- ===== v2 模拟面试核心表 =====
+CREATE TABLE IF NOT EXISTS interview_sessions (
+    session_id   TEXT PRIMARY KEY,
+    scope_root   TEXT NOT NULL,          -- 面试范围根节点 id
+    scope_title  TEXT NOT NULL,          -- 根节点标题（展示用）
+    config_json  TEXT NOT NULL,          -- {"depth","target_rounds","review_mode"}
+    status       TEXT NOT NULL DEFAULT 'active',   -- active | finished
+    excluded     INTEGER NOT NULL DEFAULT 0,       -- 1 = 不参与图谱掌握度统计
+    created_at   TEXT,
+    finished_at  TEXT
+);
+
+CREATE TABLE IF NOT EXISTS interview_turns (
+    session_id   TEXT NOT NULL,
+    round_no     INTEGER NOT NULL,
+    question     TEXT NOT NULL,          -- 面试官问题
+    node_ids     TEXT NOT NULL,          -- 提问涉及的节点 id（JSON 数组，已校验存在）
+    user_answer  TEXT,                   -- 用户回答；NULL = 尚未作答
+    judgment     TEXT,                   -- JSON: {verdict,comment,level}
+    created_at   TEXT,
+    PRIMARY KEY (session_id, round_no)
+);
+
+CREATE INDEX IF NOT EXISTS idx_it_session ON interview_turns(session_id);
+CREATE INDEX IF NOT EXISTS idx_is_status   ON interview_sessions(status);
+
+-- ===== 旧版刷题表（兼容历史 db，不再使用）=====
 CREATE TABLE IF NOT EXISTS questions (
     question_id TEXT PRIMARY KEY,
     type        TEXT NOT NULL,

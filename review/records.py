@@ -1,6 +1,11 @@
-"""学习状态记录：写记录、按节点汇总掌握度 + 复习题数、映射颜色。"""
+"""面试驱动的节点掌握度聚合（v2 模拟面试版）。
+
+数据源：interview_turns（仅统计 status='finished' 且 excluded=0 的场次）。
+判定映射：correct=4（绿） partial=3（黄） wrong/unanswered/offtopic=1（薄弱，一票否决红）。
+图谱着色 = f(面试历史)，不再读写旧版 review_records 刷题表。
+"""
+import json
 from collections import defaultdict
-from datetime import datetime
 
 import config
 from db import get_conn
@@ -10,64 +15,69 @@ GREY = "#9aa5b1"   # 未复习
 RED = "#e53e3e"    # 薄弱难点（一票否决）
 COLOR_STOPS = [(2, "#f6ad55"), (3, "#f6e05e"), (4, "#48bb78")]  # 初步橙 / 基本黄 / 完全绿
 
-
-def record_review(question_id, node_ids, mastery):
-    """答完一道题后，为每个绑定节点各写一条记录（同题重复复习则计数 +1）。"""
-    now = datetime.now().isoformat(timespec="seconds")
-    with get_conn() as c:
-        for nid in node_ids:
-            c.execute(
-                """
-                INSERT INTO review_records(node_id, question_id, user_mastery, last_review_time, review_count)
-                VALUES(?, ?, ?, ?, 1)
-                ON CONFLICT(node_id, question_id) DO UPDATE SET
-                    user_mastery = excluded.user_mastery,
-                    last_review_time = excluded.last_review_time,
-                    review_count = review_count + 1
-                """,
-                (nid, question_id, mastery, now),
-            )
+VERDICT_VALUE = {"correct": 4, "partial": 3, "wrong": 1, "unanswered": 1, "offtopic": 1}
 
 
-def node_records(node_id):
-    with get_conn() as c:
-        rows = c.execute(
-            "SELECT * FROM review_records WHERE node_id=? ORDER BY last_review_time DESC", (node_id,)
-        ).fetchall()
-    return [dict(r) for r in rows]
-
-
-def reviewed_question_ids():
-    """返回所有已经做过（有记录）的题目 id 集合。"""
-    with get_conn() as c:
-        rows = c.execute("SELECT DISTINCT question_id FROM review_records").fetchall()
-    return {r["question_id"] for r in rows}
-
-
-def nodes_mastery():
+def interview_mastery():
     """返回 {node_id: {'mastery': float, 'count': int, 'weak': bool, 'levels': [...]}}。
 
-    - count   = 该节点下已做题数（去重）
-    - weak    = 是否有一题标了「薄弱难点」
-    - mastery = 无薄弱时取各题掌握度均值（2~4），供颜色插值
+    - count   = 该节点被问到的次数（跨场次）
+    - weak    = 任一判定为 wrong/unanswered/offtopic → 一票否决
+    - mastery = 无薄弱时按各次判定均值（2~4），供颜色插值
     """
     agg = defaultdict(list)
+    weak_flag = defaultdict(bool)
     with get_conn() as c:
-        rows = c.execute("SELECT node_id, user_mastery FROM review_records").fetchall()
+        rows = c.execute(
+            """
+            SELECT t.node_ids, t.judgment, s.excluded, s.status
+            FROM interview_turns t
+            JOIN interview_sessions s ON s.session_id = t.session_id
+            WHERE s.status = 'finished' AND s.excluded = 0
+              AND t.user_answer IS NOT NULL AND t.judgment IS NOT NULL
+            """
+        ).fetchall()
+
     for r in rows:
-        agg[r["node_id"]].append(r["user_mastery"])
+        try:
+            j = json.loads(r["judgment"])
+        except (TypeError, ValueError):
+            continue
+        verdict = j.get("verdict")
+        if verdict not in config.VERDICT_CN:
+            continue
+        try:
+            node_ids = json.loads(r["node_ids"] or "[]")
+        except (TypeError, ValueError):
+            node_ids = []
+        for nid in node_ids:
+            agg[nid].append(verdict)
+            if verdict in ("wrong", "unanswered", "offtopic"):
+                weak_flag[nid] = True
 
     out = {}
-    for nid, levels in agg.items():
-        weak = any(m == "薄弱难点" for m in levels)
-        vals = [config.MASTERY_VALUE.get(m, 0) for m in levels]
+    for nid, verdicts in agg.items():
+        vals = [VERDICT_VALUE[v] for v in verdicts]
         out[nid] = {
             "mastery": (sum(vals) / len(vals)) if vals else 0.0,
-            "count": len(levels),
-            "weak": weak,
-            "levels": levels,
+            "count": len(verdicts),
+            "weak": weak_flag.get(nid, False),
+            "levels": verdicts,
         }
     return out
+
+
+def total_stats():
+    """全局统计：面试场次 / 总题数 / 薄弱节点数。供进度页展示。"""
+    with get_conn() as c:
+        n_sessions = c.execute("SELECT COUNT(*) AS n FROM interview_sessions WHERE status='finished'").fetchone()["n"]
+        n_turns = c.execute(
+            "SELECT COUNT(*) AS n FROM interview_turns t "
+            "JOIN interview_sessions s ON s.session_id=t.session_id "
+            "WHERE s.status='finished' AND s.excluded=0 AND t.user_answer IS NOT NULL AND t.judgment IS NOT NULL"
+        ).fetchone()["n"]
+    n_weak = sum(1 for e in interview_mastery().values() if e["weak"])
+    return {"sessions": n_sessions, "turns": n_turns, "weak_nodes": n_weak}
 
 
 # ---------- 颜色插值 ----------
