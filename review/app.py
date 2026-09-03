@@ -87,14 +87,15 @@ def node_label(nid):
 
 # ---------------- 会话状态助手 ----------------
 def active_session_id():
-    """优先 session_state；否则捡起库里任意 active 场次（刷新/换页不丢）。
+    """返回当前应展示的场次 id：优先 session_state（active=继续答，
+    finished=展示刚结束/上次查看的场次报告）；否则捡库里任意 active 场次。
 
     自动回收"孤儿场"：开场 LLM 调用期间刷新/中断会留下 0 轮的 active 场次，
     既无题可答又会锁死开始按钮——此类场次直接删除，避免 UI 死锁。
     """
     sid = st.session_state.get("iv_sid")
     s = interview.get_session(sid) if sid else None
-    if s and s["status"] == "active":
+    if s:
         return sid
     for row in interview.list_sessions():
         if row["status"] == "active":
