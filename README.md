@@ -3,9 +3,9 @@
 > 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目。核心贡献有三：① 把通信工程课程知识组织为「节点 + 树层级 + Wiki 关联 + 思维链（cot）」三层结构；② 配套多模型评测体系，验证了优于朴素检索的最终检索方案（top-3 + links 扩展 + LLM 精挑）；③ 在检索流水线上实现**多轮追问记忆**，让"那反过来呢""补零呢"这类裸指代追问也能接续检索。
 
 <p align="center">
-  <img src="https://img.shields.io/badge/节点-85-2b6cb0?style=flat-square" alt="nodes">
-  <img src="https://img.shields.io/badge/思维链-37-2b6cb0?style=flat-square" alt="cot">
-  <img src="https://img.shields.io/badge/连接-316-2b6cb0?style=flat-square" alt="links">
+  <img src="https://img.shields.io/badge/节点-90-2b6cb0?style=flat-square" alt="nodes">
+  <img src="https://img.shields.io/badge/思维链-39-2b6cb0?style=flat-square" alt="cot">
+  <img src="https://img.shields.io/badge/连接-340-2b6cb0?style=flat-square" alt="links">
   <img src="https://img.shields.io/badge/benchmark-116_题-2f855a?style=flat-square" alt="benchmark">
   <img src="https://img.shields.io/badge/多轮追问-44_组-16a085?style=flat-square" alt="multiturn">
   <img src="https://img.shields.io/badge/RAG-知识图谱-805ad5?style=flat-square" alt="rag">
@@ -56,7 +56,7 @@
 
 ```mermaid
 flowchart LR
-    A["📚 知识库本体<br/>85 节点 · 树 + Wiki + 思维链"] --> B["🔍 检索流水线<br/>TF-IDF → links → LLM 精挑"]
+    A["📚 知识库本体<br/>90 节点 · 树 + Wiki + 思维链"] --> B["🔍 检索流水线<br/>TF-IDF → links → LLM 精挑"]
     B --> C["🧪 评测体系<br/>116 题 × 多模型 × 裁判"]
     A --> D["🧩 复习出题插件<br/>AI 出题 + 学习记录"]
     B --> E["💬 多轮追问提升<br/>追问记忆 · 44 组题库"]
@@ -157,18 +157,18 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（37）"]
+    MD[".md 节点文件"] --> CORE["🔵 core · 核心概念（39）"]
     MD --> HUB["🟡 hub · 枢纽（20）"]
-    MD --> LEAF["🟢 leaf · 叶子（28）"]
+    MD --> LEAF["🟢 leaf · 叶子（31）"]
 ```
 
 </details>
 
 | 类型 | 含义 | 特征 | 数量 |
 |------|------|------|:---:|
-| `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 37 |
+| `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 39 |
 | `hub` | 分类文件夹 | 统领子节点、组织层次，无思维链 | 20 |
-| `leaf` | 叶子知识点 | 具体知识点，树的末端 | 28 |
+| `leaf` | 叶子知识点 | 具体知识点，树的末端 | 31 |
 
 每门课一个**贯穿性枢纽**（写在核心节点里），让每门课有一条清晰的思维主线：
 
@@ -245,7 +245,7 @@ flowchart TB
     ROOT --> DSP[信号与系统 + DSP（16）]
     ROOT --> MOB[移动通信（18）]
     ROOT --> RSP[随机信号处理（15）]
-    ROOT --> EMF[电磁场（1）]
+    ROOT --> EMF[电磁场（6）]
     ROOT --> NET[计算机网络（7）]
 
     MATH --> M1[微积分]
@@ -304,7 +304,7 @@ flowchart LR
 
 </details>
 
-> **关键价值**：links 能救回「关键词完全不重合、但语义强相关」的节点——纯关键词检索匹配不到「均衡器」与「最小相位」的关联，links 沿图一跳即可补上。全库共 **316 条连接，其中 105 条跨树连接**（另有 7 条为 root 到七棵主题树的层级连接）。
+> **关键价值**：links 能救回「关键词完全不重合、但语义强相关」的节点——纯关键词检索匹配不到「均衡器」与「最小相位」的关联，links 沿图一跳即可补上。全库共 **340 条连接，其中 119 条跨树连接**（另有 7 条为 root 到七棵主题树的层级连接）。
 
 ### 6. cot（思维链）设计
 
@@ -643,7 +643,7 @@ flowchart LR
 ```text
 knowledge-base/
 ├── knowledge-v2/            # 知识库本体（核心）
-│   ├── nodes/               # 85 个 .md 节点（每个 = 一个知识点）
+│   ├── nodes/               # 90 个 .md 节点（每个 = 一个知识点）
 │   └── _meta/tree.json      # 树结构索引（build_tree.py 自动生成）
 ├── benchmark/               # 评测体系
 │   ├── questions_full.json  # 116 题完整题库
