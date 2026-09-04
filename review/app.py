@@ -398,11 +398,14 @@ def render_live_fragment(sid: str):
         if cfg.get("review_mode") == "结束后一起看":
             st.caption("（真实面试模式——当场不公布判定，全部结束后在报告里一起看）")
 
+    # text_area 的 key 绑定题号：提交/跳过后 round_no+1 → widget 身份改变 → 全新实例必然空。
+    # 比"固定 key + pop + rerun 重建"可靠——后者依赖 fragment rerun 的受控组件清空时序，实测不稳。
+    ans_key = f"iv_ans_{t['round_no']}"
     st.text_area(
         "你的回答",
         height=150,
         placeholder="在此输入你的回答（可换行、可写推导）。答不上就点下方「没答上 / 跳过」。",
-        key="iv_ans_input",
+        key=ans_key,
     )
     b1, b2, b3 = st.columns([1.4, 1.4, 1.2])
     with b1:
@@ -419,12 +422,15 @@ def render_live_fragment(sid: str):
         st.rerun()  # 整页：切到结业报告
         return
 
-    answer = st.session_state.get("iv_ans_input", "").strip()
+    answer = st.session_state.get(ans_key, "").strip()
     if do_submit and not answer:
         st.warning("回答为空——若确实没答上，请点「没答上 / 跳过」。")
         return
     if do_submit or do_skip:
-        st.session_state.pop("iv_ans_input", None)  # 先清空，fragment 刷新后输入框为空
+        # 清理全部历史输入框状态（per-round key 随题号变化，新题天然空；防 session_state 累积）
+        stale = [k for k in st.session_state if k.startswith("iv_ans_")]
+        for k in stale:
+            del st.session_state[k]
         try:
             with st.spinner("面试官判定中…"):
                 out = interview.submit_answer(sid, answer if do_submit else "")
