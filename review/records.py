@@ -4,11 +4,10 @@
 判定映射：correct=4（绿） partial=3（黄） wrong/unanswered/offtopic=1（薄弱，一票否决红）。
 图谱着色 = f(面试历史)，不再读写旧版 review_records 刷题表。
 """
-import json
+import config
 from collections import defaultdict
 
-import config
-from db import get_conn
+from db import get_conn, safe_json_loads
 
 # 颜色
 GREY = "#9aa5b1"   # 未复习
@@ -39,17 +38,11 @@ def interview_mastery():
         ).fetchall()
 
     for r in rows:
-        try:
-            j = json.loads(r["judgment"])
-        except (TypeError, ValueError):
-            continue
+        j = safe_json_loads(r["judgment"]) or {}
         verdict = j.get("verdict")
         if verdict not in config.VERDICT_CN:
             continue
-        try:
-            node_ids = json.loads(r["node_ids"] or "[]")
-        except (TypeError, ValueError):
-            node_ids = []
+        node_ids = safe_json_loads(r["node_ids"], []) or []
         for nid in node_ids:
             agg[nid].append(verdict)
             if verdict in ("wrong", "unanswered", "offtopic"):

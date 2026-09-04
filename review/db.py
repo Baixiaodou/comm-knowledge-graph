@@ -7,10 +7,25 @@
 旧版刷题表（questions / question_nodes / review_records）定义保留，
 仅用于兼容历史 db 文件，新代码不再读写它们。
 """
+import json
 import sqlite3
 from contextlib import contextmanager
 
 import config
+
+
+def safe_json_loads(s: str, default=None):
+    """容错解析 JSON 字符串。
+
+    interview_turns.judgment / node_ids 等字段的历史数据可能缺失或脏（旧版本写入格式、
+    手工编辑库），各模块统一走此函数解析，不再各自 try/except（曾重复 6+ 处且口径不一）。
+    """
+    if s is None:
+        return default
+    try:
+        return json.loads(s)
+    except (TypeError, ValueError):
+        return default
 
 SCHEMA = """
 -- ===== v2 模拟面试核心表 =====
@@ -79,8 +94,12 @@ CREATE INDEX IF NOT EXISTS idx_rr_node ON review_records(node_id);
 
 @contextmanager
 def get_conn():
-    conn = sqlite3.connect(str(config.DB_PATH))
+    conn = sqlite3.connect(str(config.DB_PATH), timeout=10)
     conn.row_factory = sqlite3.Row
+    # WAL + busy_timeout：本应用读多写少但跨页签/多按钮并发（图谱查询 vs 逐轮落盘），
+    # 无 WAL 时写入会与并发读互相阻塞报 database is locked。
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     try:
         yield conn
         conn.commit()
@@ -89,6 +108,21 @@ def get_conn():
         raise
     finally:
         conn.close()
+
+
+def update_turn_if_pending(sid: str, round_no: int, user_answer: str, judgment: str) -> bool:
+    """乐观锁：仅当该轮仍未作答时才写入（防双击/多窗口并发重复提交）。
+
+    返回 True = 本写入生效；False = 该轮已被他人抢先作答（调用方应丢弃本次 LLM 结果，
+    避免覆盖已落盘的判定或撞 (session_id, round_no) 主键抛 IntegrityError）。
+    """
+    with get_conn() as c:
+        cur = c.execute(
+            "UPDATE interview_turns SET user_answer=?, judgment=? "
+            "WHERE session_id=? AND round_no=? AND user_answer IS NULL",
+            (user_answer, judgment, sid, round_no),
+        )
+        return cur.rowcount > 0
 
 
 def init_db():

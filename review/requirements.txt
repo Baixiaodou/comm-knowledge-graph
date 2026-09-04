@@ -1,5 +1,5 @@
-streamlit>=1.40
-openai>=1.0
-PyYAML>=6.0
-python-dotenv>=1.0
-pandas>=2.0
+# AI 模拟面试训练器依赖（review/ 自包含；测试环境：streamlit 1.63 / openai 1.54 / PyYAML 6.0 / dotenv 1.2）
+streamlit>=1.40,<2.0
+openai>=1.0,<2.0
+PyYAML>=6.0,<7.0
+python-dotenv>=1.0,<2.0

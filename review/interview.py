@@ -20,7 +20,8 @@ from typing import Dict, List, Optional
 import config
 import prompts_interview as pi
 import prompts_reviewer as pr
-from db import get_conn
+import db
+from db import get_conn, safe_json_loads
 
 VERDICTS = ("correct", "partial", "wrong", "unanswered", "offtopic")
 WEAK_VERDICTS = ("wrong", "unanswered", "offtopic")
@@ -60,7 +61,7 @@ def _client():
 
 
 def _extract_json(text: str):
-    """容错提取 JSON 对象：容忍 markdown 围栏与前后缀文字。"""
+    """容错提取 JSON 对象：容忍 markdown 围栏与前后缀文字。仅接受顶层为 dict。"""
     text = (text or "").strip()
     m = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.S)
     if m:
@@ -69,18 +70,39 @@ def _extract_json(text: str):
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
         text = text[start : end + 1]
-    return json.loads(text)
+    data = json.loads(text)
+    if not isinstance(data, dict):  # LLM 偶发返回数组/标量，直接 .get 会 AttributeError
+        raise ValueError(f"LLM 返回的不是 JSON 对象: {str(data)[:80]}")
+    return data
 
 
 def _llm_json(system: str, user: str, temperature: float = 0.4) -> dict:
+    """带重试的 LLM JSON 调用：网络抖动/限流/脏输出共重试 2 次，指数退避。
+
+    重试只做"幂等安全"的调用（每次都是无状态的判定+出题请求）；3 次失败后抛错，
+    由上层提示用户重试/结束本场，不静默吞错。
+    """
     client, model = _client()
-    r = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        temperature=temperature,
-        max_tokens=2000,  # 防个别轮生成超长文本拖慢；正常一轮输出仅 ~100 tokens
-    )
-    return _extract_json(r.choices[0].message.content)
+    last_err: Optional[Exception] = None
+    for attempt in range(3):
+        try:
+            r = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                temperature=temperature,
+                max_tokens=2000,  # 防个别轮生成超长文本拖慢；正常一轮输出仅 ~100 tokens
+            )
+            return _extract_json(r.choices[0].message.content)
+        except (ValueError, json.JSONDecodeError) as e:
+            # 输出脏（非 JSON / 非对象）：再试一次，仍失败则抛给上层
+            last_err = e
+        except Exception as e:  # noqa: BLE001 —— openai 各版本异常类路径不一，统一兜底
+            last_err = e
+        if attempt < 2:
+            import time
+
+            time.sleep(1.5 * (2**attempt))  # 1.5s / 3s 指数退避
+    raise RuntimeError(f"LLM 调用连续失败（已重试 2 次）：{last_err}")
 
 
 # ---------------- 会话 CRUD ----------------
@@ -205,11 +227,8 @@ def _review_materials(sid: str) -> dict:
     cfg = json.loads(session["config_json"])
     lines, node_ids = [], []
     for t in turns:
-        try:
-            j = json.loads(t["judgment"]) if t["judgment"] else {}
-        except (TypeError, ValueError):
-            j = {}
-        nids = json.loads(t["node_ids"] or "[]")
+        j = safe_json_loads(t["judgment"], {}) or {}
+        nids = safe_json_loads(t["node_ids"], []) or []
         node_ids.extend(nids)
         node_ids.extend(j.get("weak_nodes") or [])
         verdict = j.get("verdict", "?")
@@ -346,12 +365,11 @@ def weak_priorities(scope_root: str) -> List[tuple]:
         ]
     for sid in sids:
         for t in get_turns(sid):
-            try:
-                j = json.loads(t["judgment"]) if t["judgment"] else {}
-            except (TypeError, ValueError):
+            j = safe_json_loads(t["judgment"], {}) or {}
+            if not j:  # judgment 缺失/脏 → 该轮不参与薄弱统计
                 continue
             if j.get("verdict") in WEAK_VERDICTS:
-                for nid in json.loads(t["node_ids"] or "[]"):
+                for nid in safe_json_loads(t["node_ids"], []) or []:
                     if nid in content:
                         cnt[nid] += 1
                 for w in j.get("weak_nodes") or []:
@@ -407,12 +425,9 @@ def _candidates_text(nids: List[str]) -> str:
 def _note_text(turns: List[dict]) -> str:
     lines = []
     for t in turns:
-        try:
-            j = json.loads(t["judgment"]) if t["judgment"] else {}
-        except (TypeError, ValueError):
-            continue
+        j = safe_json_loads(t["judgment"], {}) or {}
         v = j.get("verdict")
-        if not v:
+        if not v:  # judgment 缺失/脏 → 跳过该轮
             continue
         vcn = config.VERDICT_CN.get(v, v)
         weak = ",".join(j.get("weak_nodes") or [])
@@ -488,18 +503,15 @@ def submit_answer(sid: str, answer: str) -> dict:
         return {"finished": True, "reason": "没有待作答的题目，会话已结束"}
 
     answered_before = len([t for t in turns if t["user_answer"] is not None])
-    cur_nodes = json.loads(current["node_ids"] or "[]")
+    cur_nodes = safe_json_loads(current["node_ids"], []) or []
 
     # used：其余轮次问过的节点 + 全部历史薄弱点；当前题节点允许被"追问/确认"再覆盖
     used: set = set()
     for t in turns:
         if t["round_no"] == current["round_no"]:
             continue
-        used.update(json.loads(t["node_ids"] or "[]"))
-        try:
-            used.update(json.loads(t["judgment"]).get("weak_nodes") or [])
-        except (TypeError, ValueError):
-            pass
+        used.update(safe_json_loads(t["node_ids"], []) or [])
+        used.update((safe_json_loads(t["judgment"]) or {}).get("weak_nodes") or [])
     if cur_nodes:
         used.discard(cur_nodes[0])
 
@@ -538,7 +550,16 @@ def submit_answer(sid: str, answer: str) -> dict:
         "reference": (data.get("reference") or "").strip(),  # 参考答案要点（判后展示对照）
         "weak_nodes": weak,
     }
-    _update_turn(sid, current["round_no"], answer, judgment)
+    # 乐观锁落盘：仅当该轮仍未作答才写入（防双击/多窗口并发重复提交覆盖判定或撞主键）
+    ok = db.update_turn_if_pending(sid, current["round_no"], answer, json.dumps(judgment, ensure_ascii=False))
+    if not ok:
+        return {
+            "finished": False,
+            "conflict": True,
+            "reason": "该题刚刚已被提交（重复点击或多窗口同时作答），本次判定未覆盖，请刷新查看",
+            "judged": None,
+            "next": None,
+        }
 
     answered_now = answered_before + 1
     should_end = bool(data.get("should_end")) or force_end or (answered_now >= target) or (not cands and cands_text.startswith("（本轮为最后一轮"))
@@ -570,7 +591,7 @@ def manual_finish(sid: str):
             "verdict": "unanswered",
             "score": 0,
             "comment": "面试被主动结束",
-            "weak_nodes": json.loads(current["node_ids"] or "[]"),
+            "weak_nodes": safe_json_loads(current["node_ids"], []) or [],
         }
         _update_turn(sid, current["round_no"], "（未作答）", judgment)
     mark_finished(sid)
@@ -585,15 +606,12 @@ def build_report(sid: str) -> dict:
 
     answered = []
     for t in turns:
-        try:
-            j = json.loads(t["judgment"]) if t["judgment"] else {}
-        except (TypeError, ValueError):
-            j = {}
+        j = safe_json_loads(t["judgment"], {}) or {}
         answered.append(
             {
                 "round_no": t["round_no"],
                 "question": t["question"],
-                "node_ids": json.loads(t["node_ids"] or "[]"),
+                "node_ids": safe_json_loads(t["node_ids"], []) or [],
                 "user_answer": t["user_answer"] or "",
                 "verdict": j.get("verdict"),
                 "score": int(j.get("score", config.SCORE_FALLBACK.get(j.get("verdict"), 0))),  # 0~100；旧数据无 score 按档位回退
@@ -632,7 +650,7 @@ def build_report(sid: str) -> dict:
     content = content_nodes(session["scope_root"])
     asked_ids = set()
     for t in turns:
-        asked_ids.update(json.loads(t["node_ids"] or "[]"))
+        asked_ids.update(safe_json_loads(t["node_ids"], []) or [])
     coverage_asked = len(asked_ids & set(content))
 
     return {

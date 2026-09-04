@@ -10,13 +10,6 @@ import records
 # 节点大小（按类型）
 TYPE_SIZE = {"core": 34, "hub": 24, "leaf": 16}
 
-# CDN 兜底（本地 static/echarts.min.js 缺失时使用）
-_CDN = [
-    "https://cdn.staticfile.org/echarts/5.5.0/echarts.min.js",
-    "https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js",
-    "https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js",
-]
-
 _LOCAL_JS = Path(__file__).resolve().parent / "static" / "echarts.min.js"
 
 
@@ -93,18 +86,9 @@ _TEMPLATE = """<!DOCTYPE html>
 <div id="chart" style="width:100%;height:__HEIGHT__px;"></div>
 __ECHARTS_SCRIPT__
 <script>
-var CDN = __CDN__;
+// esc：tooltip 里动态文本（节点名/摘要来自知识库，可能含 HTML）先转义再进 innerHTML，防注入
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 var option = __OPTION__;
-function boot(i){
-  if(i>=CDN.length){
-    document.getElementById('chart').innerHTML='<p style="padding:20px;color:#e53e3e">ECharts 加载失败：请联网后刷新。</p>';
-    return;
-  }
-  var s=document.createElement('script'); s.src=CDN[i];
-  s.onload=function(){ init(); };
-  s.onerror=function(){ boot(i+1); };
-  document.head.appendChild(s);
-}
 function init(){
   var chart = echarts.init(document.getElementById('chart'));
   option.tooltip = {
@@ -112,36 +96,33 @@ function init(){
     formatter: function(p){
       var d = p.data;
       var t = d.type==='core' ? '核心节点' : (d.type==='hub' ? '枢纽节点' : '叶子节点');
-      var html = '<b>'+d.name+'</b> <span style="color:#999">['+d.id+']</span><br/>'
+      var html = '<b>'+esc(d.name)+'</b> <span style="color:#999">['+esc(d.id)+']</span><br/>'
                + '被问次数：'+(d.value||0)+' · '+t;
-      if(d.summary){ html += '<br/><span style="color:#888">'+d.summary+'</span>'; }
+      if(d.summary){ html += '<br/><span style="color:#888">'+esc(d.summary)+'</span>'; }
       return html;
     }
   };
   chart.setOption(option);
   window.addEventListener('resize', function(){ chart.resize(); });
 }
-__BOOT__
+init();
 </script>
 </body></html>"""
 
 
 def graph_html(option, height=620):
-    """把 ECharts 选项渲染成可嵌入的自包含 HTML 字符串（优先内联本地 JS）。"""
-    opt_json = json.dumps(option, ensure_ascii=False)
-    cdn_json = json.dumps(_CDN)
+    """把 ECharts 选项渲染成可嵌入的自包含 HTML 字符串。
 
-    if _LOCAL_JS.exists():
-        echarts_script = "<script>" + _LOCAL_JS.read_text(encoding="utf-8") + "</script>"
-        boot = "init();"
-    else:
-        echarts_script = ""
-        boot = "boot(0);"
+    - 只内联本地 static/echarts.min.js（随仓库分发），不加载任何第三方 CDN；
+    - option JSON 用 ensure_ascii=True 并把 `</` 转义为 `<\\/`：节点 title/summary
+      来自知识库（开源可被贡献），直接内联进 <script> 会形成闭合逃逸（存储型 XSS）。
+    """
+    if not _LOCAL_JS.exists():
+        raise FileNotFoundError(f"缺少本地 ECharts 库：{_LOCAL_JS}（已随仓库分发，请勿删除）")
+    opt_json = json.dumps(option, ensure_ascii=True).replace("</", "<\\/")
 
     html = _TEMPLATE
     html = html.replace("__HEIGHT__", str(height))
-    html = html.replace("__CDN__", cdn_json)
+    html = html.replace("__ECHARTS_SCRIPT__", "<script>" + _LOCAL_JS.read_text(encoding="utf-8") + "</script>")
     html = html.replace("__OPTION__", opt_json)
-    html = html.replace("__ECHARTS_SCRIPT__", echarts_script)
-    html = html.replace("__BOOT__", boot)
     return html

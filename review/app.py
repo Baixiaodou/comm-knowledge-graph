@@ -9,6 +9,7 @@
 
 运行：streamlit run review/app.py
 """
+import html
 import json
 import sys
 from pathlib import Path
@@ -30,6 +31,12 @@ st.set_page_config(page_title="AI 模拟面试 · 专业课", page_icon="🎤", 
 db.init_db()
 
 MIN_OF_ROUNDS = {v: k for k, v in config.DURATION_ROUNDS.items()}
+
+
+def _esc(s) -> str:
+    """HTML 转义：凡以 unsafe_allow_html=True 渲染的动态文本（LLM/知识库内容）必须先过此函数，
+    否则内容里的 <script>/<img onerror> 会被当作 HTML 执行（存储型 XSS）。"""
+    return html.escape(str(s or ""))
 
 
 # ---------------- 侧栏：API 配置（本地安全存储，不进 GitHub） ----------------
@@ -155,10 +162,13 @@ def verdict_badge(v):
     if not v:
         return ""
     bg = VERDICT_BG.get(v, "#868e96")
+    label = config.VERDICT_CN.get(v)
+    if not label:  # 未知判定（不应出现，LLM 脏输出时防御）→ 转义后原样显示
+        label = _esc(v)
     return (
         f'<span style="background:{bg};color:#fff;padding:1px 9px;'
         f'border-radius:10px;font-size:12px;font-weight:600">'
-        f'{config.VERDICT_CN.get(v, v)}</span>'
+        f'{label}</span>'
     )
 
 
@@ -240,9 +250,12 @@ def render_report(rpt):
         f"答错 {vc['wrong']} / 未答上 {vc['unanswered']} / 跑题 {vc['offtopic']}"
     )
     band_txt = " · ".join(f"{g} ≥ {int(thr * 100)} 分" for thr, g, _ in config.GRADE_BANDS)
+    # 档位文案由 config.VERDICT_SCORE_RANGE 生成，改档位时一处生效（勿手写平行文案）
+    vcn = config.VERDICT_CN
+    range_txt = " · ".join(f"{vcn[k]} {lo}+" if hi == 100 else f"{vcn[k]} {lo}~{hi}" for k, (lo, hi) in config.VERDICT_SCORE_RANGE.items())
     st.caption(
-        f"**评分口径**：每题由 AI 面试官按要点覆盖率打 0~100 分（答对 80+ · 部分 55~79 · "
-        f"答错 20~54 · 未答/跑题 ≤20），本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
+        f"**评分口径**：每题由 AI 面试官按要点覆盖率打 0~100 分（{range_txt}），"
+        f"本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
     )
     st.markdown(f"**评级 {rpt['grade']}**　{rpt['grade_cn']}")
 
@@ -265,7 +278,7 @@ def render_report(rpt):
             # unsafe_allow_html=True：verdict_badge 的 span 徽章要真正渲染成 HTML
             sc = a.get("score")
             score_txt = f"　得分 **{sc}**" if sc is not None else ""
-            st.markdown(f"{verdict_badge(a['verdict'])}{score_txt}　**问题**：{a['question']}", unsafe_allow_html=True)
+            st.markdown(f"{verdict_badge(a['verdict'])}{score_txt}　**问题**：{_esc(a['question'])}", unsafe_allow_html=True)
             if a["user_answer"]:
                 st.markdown(f"**你的回答**：\n\n{a['user_answer']}")
             else:
@@ -381,7 +394,7 @@ def render_live_fragment(sid: str):
         comment = fb.get("comment", "") if show_comment_enabled(cfg) else ""
         score_txt = f" · 得分 **{fb['score']}**" if fb.get("score") is not None else ""
         if comment:
-            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}{score_txt}　{comment}", unsafe_allow_html=True)
+            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}{score_txt}　{_esc(comment)}", unsafe_allow_html=True)
         else:
             st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}{score_txt}", unsafe_allow_html=True)
         ref = (fb.get("reference") or "").strip()
@@ -407,6 +420,8 @@ def render_live_fragment(sid: str):
         height=150,
         placeholder="在此输入你的回答（可换行、可写推导）。答不上就点下方「没答上 / 跳过」。",
         key=ans_key,
+        max_chars=2000,
+        help="上限 2000 字：防超长粘贴撑爆单轮 token；面试回答点到机制即可，不必长篇。",
     )
     b1, b2, b3 = st.columns([1.4, 1.4, 1.2])
     with b1:
@@ -440,6 +455,10 @@ def render_live_fragment(sid: str):
             return
         except Exception as e:  # noqa: BLE001
             st.error(f"本轮推进失败：{e}（可直接「结束面试」保住已答记录）")
+            return
+        if out.get("conflict"):
+            st.warning(out.get("reason", "检测到重复提交"))
+            st.rerun(scope="fragment")  # 重读最新状态，避免停留在过期题目
             return
         if out.get("finished"):
             st.session_state.pop("iv_feedback", None)

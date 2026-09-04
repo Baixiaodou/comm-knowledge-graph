@@ -126,6 +126,27 @@ def mask_key(key: str) -> str:
     return key[:6] + "…" + key[-4:]
 
 
+def _validate_base_url(base_url: str) -> str:
+    """校验自定义 Base URL：只允许 https，或 http 指向本机（localhost/127.0.0.1，本地代理/中转常见）。
+
+    防 API key 经明文 http 发送到任意远端地址。返回规范化后的 URL（去尾部空白）。
+    """
+    import urllib.parse
+
+    bu = (base_url or "").strip()
+    if not bu:
+        return ""
+    p = urllib.parse.urlparse(bu)
+    if p.scheme not in ("https", "http"):
+        raise ValueError("Base URL 必须以 http(s):// 开头")
+    host = (p.hostname or "").lower()
+    if p.scheme == "http" and host not in ("localhost", "127.0.0.1", "0.0.0.0", "::1"):
+        raise ValueError("出于安全考虑，Base URL 仅支持 https；http 仅允许本机地址（localhost）")
+    if not p.netloc:
+        raise ValueError("Base URL 缺少主机名")
+    return bu
+
+
 def save_llm_config(api_key: str = "", base_url: str = "", model: str = "", env_file=None) -> bool:
     """把 LLM 配置保存到 review/.env（已被 .gitignore 排除，不会提交 GitHub）。
 
@@ -138,6 +159,7 @@ def save_llm_config(api_key: str = "", base_url: str = "", model: str = "", env_
     model = (model or "").strip()
     if not (api_key or base_url or model):
         raise ValueError("至少填写一项（API key 或高级选项）")
+    base_url = _validate_base_url(base_url)  # 非法地址直接抛错，UI 层捕获显示
 
     from dotenv import set_key
 
