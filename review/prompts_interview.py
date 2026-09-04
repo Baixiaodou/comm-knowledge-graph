@@ -7,6 +7,7 @@
 {
   "verdict":   "correct" | "partial" | "wrong" | "unanswered" | "offtopic",   // 对上一答的判定
   "comment":   "给考生的简短点评（若点评时机=只判分不点评，UI 会隐藏）",
+  "reference": "本题参考答案要点（判后展示给考生对照复习，见下方口径）",
   "weak_nodes":[候选节点 id 数组],      // 上一答暴露出的薄弱知识点（应 ⊆ 本轮候选）
   "next_question": "下一道题全文；收束时填空串",
   "next_nodes":    ["下一题依托的候选节点 id"],   // 必须 ⊆ 本轮候选，且存在
@@ -20,6 +21,7 @@ _OUTPUT_SCHEMA = """你必须只输出一个 JSON 对象，不要输出任何其
 {
   "verdict": "correct|partial|wrong|unanswered|offtopic 之一",
   "comment": "给考生的点评，1~2 句中文；考生答对时简评亮点，答错时点出关键缺陷但不要说破完整答案",
+  "reference": "本题参考答案要点：2~4 条短要点（可用 | 分隔），总长 ≤180 字，严格依据本轮【候选节点原文】组织；它会在判定后展示给考生对照查漏，考生答得再好也照写完整标准结构",
   "weak_nodes": ["薄弱知识点的候选节点id"],   // 只允许填本轮候选里存在的 id；没有就填 []
   "next_question": "下一道题完整表述（中文）；若 should_end=true 则填空字符串",
   "next_nodes": ["下一题所考察的候选节点id"],  // 从本轮候选里挑 1 个；必须与 next_question 对应；收束时填 []

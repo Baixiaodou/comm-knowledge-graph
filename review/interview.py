@@ -26,7 +26,7 @@ VERDICTS = ("correct", "partial", "wrong", "unanswered", "offtopic")
 WEAK_VERDICTS = ("wrong", "unanswered", "offtopic")
 _CONTENT_TYPES = ("core", "leaf")
 _CAND_PER_ROUND = 3          # 每轮注入的候选知识点个数
-_PER_NODE_CAP = 2200         # 每个候选节点正文截断上限
+_PER_NODE_CAP = 1600         # 每个候选节点正文截断上限（提速：控制每轮注入量）
 _NOTE_PER_MSG = 60           # 面试官笔记单行截断
 
 _nodes: Dict[str, object] = {}          # app 注入的知识库节点（只读）
@@ -78,6 +78,7 @@ def _llm_json(system: str, user: str, temperature: float = 0.4) -> dict:
         model=model,
         messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         temperature=temperature,
+        max_tokens=2000,  # 防个别轮生成超长文本拖慢；正常一轮输出仅 ~100 tokens
     )
     return _extract_json(r.choices[0].message.content)
 
@@ -515,7 +516,12 @@ def submit_answer(sid: str, answer: str) -> dict:
     if verdict not in VERDICTS:
         verdict = "partial"
     weak = [x for x in (data.get("weak_nodes") or []) if x in _nodes]
-    judgment = {"verdict": verdict, "comment": (data.get("comment") or "").strip(), "weak_nodes": weak}
+    judgment = {
+        "verdict": verdict,
+        "comment": (data.get("comment") or "").strip(),
+        "reference": (data.get("reference") or "").strip(),  # 参考答案要点（判后展示对照）
+        "weak_nodes": weak,
+    }
     _update_turn(sid, current["round_no"], answer, judgment)
 
     answered_now = answered_before + 1
@@ -574,6 +580,7 @@ def build_report(sid: str) -> dict:
                 "user_answer": t["user_answer"] or "",
                 "verdict": j.get("verdict"),
                 "comment": j.get("comment", ""),
+                "reference": j.get("reference", ""),  # 参考答案要点（判后对照复习）
                 "weak_nodes": j.get("weak_nodes", []),
             }
         )
@@ -584,14 +591,11 @@ def build_report(sid: str) -> dict:
     partial = verdict_cnt.get("partial", 0)
 
     score = (correct + 0.6 * partial) / n if n else 0.0
-    if score >= 0.85:
-        grade, grade_cn = "A", "优秀：知识结构扎实，可进入面试冲刺"
-    elif score >= 0.7:
-        grade, grade_cn = "B", "良好：大部分掌握，按薄弱清单补漏即可"
-    elif score >= 0.5:
-        grade, grade_cn = "C", "及格：有明显缺口，建议先通读薄弱节点原文再面"
-    else:
-        grade, grade_cn = "D", "需回炉：大范围薄弱，建议先系统复习该科目"
+    grade, grade_cn = "D", config.GRADE_BANDS[-1][2]
+    for thr, g, desc in config.GRADE_BANDS:
+        if score >= thr:
+            grade, grade_cn = g, desc
+            break
 
     weak_counter: Counter = Counter()
     for a in answered:

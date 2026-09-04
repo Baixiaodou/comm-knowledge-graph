@@ -239,7 +239,12 @@ def render_report(rpt):
         + f" · 答对 {vc['correct']} / 部分 {vc['partial']} / "
         f"答错 {vc['wrong']} / 未答上 {vc['unanswered']} / 跑题 {vc['offtopic']}"
     )
-    st.markdown(f"**{rpt['grade_cn']}**")
+    band_txt = " · ".join(f"{g} ≥ {int(thr * 100)} 分" for thr, g, _ in config.GRADE_BANDS)
+    st.caption(
+        f"**评分口径**：答对 = 1 分 · 部分正确 = 0.6 分 · 答错/未答/跑题 = 0 分 → "
+        f"本场得分 **{rpt['score_pct']}%**。档位：{band_txt}。"
+    )
+    st.markdown(f"**评级 {rpt['grade']}**　{rpt['grade_cn']}")
 
     # —— 判定校准官评审区（仅已结束场次；报告与历史 Tab 共用本函数故两处都出现）——
     if rpt["session"]["status"] == "finished":
@@ -257,11 +262,21 @@ def render_report(rpt):
     st.markdown("#### 逐题记录")
     for a in rpt["answered"]:
         with st.expander(f"Q{a['round_no']} · {a['question'][:48]}"):
-            st.markdown(f"{verdict_badge(a['verdict'])}　**问题**：{a['question']}")
+            # unsafe_allow_html=True：verdict_badge 的 span 徽章要真正渲染成 HTML
+            st.markdown(f"{verdict_badge(a['verdict'])}　**问题**：{a['question']}", unsafe_allow_html=True)
             if a["user_answer"]:
                 st.markdown(f"**你的回答**：\n\n{a['user_answer']}")
             else:
                 st.markdown("**你的回答**：（未作答）")
+            ref = (a.get("reference") or "").strip()
+            if ref:
+                st.markdown("**📌 参考答案要点**：")
+                parts = [x.strip() for x in ref.split("|") if x.strip()]
+                if len(parts) > 1:
+                    for p in parts:
+                        st.markdown(f"- {p}")
+                else:
+                    st.markdown(ref)
             if a["comment"] and show_comment_enabled(cfg):
                 st.markdown(f"**点评**：{a['comment']}")
             if a["node_ids"]:
@@ -329,59 +344,84 @@ def render_setup(disabled):
             interview.delete_session(sid)
 
 
-def render_answer_panel(sid, s):
+@st.fragment
+def render_live_fragment(sid: str):
+    """面试进行中的专注答题视图（fragment 局部刷新）。
+
+    fragment 的意义：提交/跳过/判定只重跑本区域，不再整页 rerun——
+    否则每次答题都会重建图谱大图（内嵌 1MB+ echarts 的 iframe），
+    这就是"每题都卡顿"的主要来源。结束/切页签才走整页 rerun。
+    """
+    s = interview.get_session(sid)
+    if not s:
+        return
     cfg = json.loads(s["config_json"])
     target = cfg["target_rounds"]
     t = current_turn(sid)
-    if not t:
+    if not t:  # 已无待答题目（刚被结束）→ 整页刷新切到报告视图
+        st.rerun()
         return
     turns = interview.get_turns(sid)
     answered_before = len([x for x in turns if x["user_answer"] is not None])
 
-    st.subheader(f"面试进行中 · {s['scope_title']}")
-    st.caption(f"深度「{cfg.get('depth')}」· 风格「{cfg.get('style') or '默认'}」· 目标 ~{target} 题 · 点评「{cfg.get('review_mode')}」")
+    # —— 头部信息条 ——
+    c_top = st.columns([2.2, 1, 1, 1.3])
+    c_top[0].markdown(f"**🎤 面试中 · {s['scope_title']}**")
+    c_top[1].markdown(f"第 {t['round_no']} / ~{target} 题")
+    c_top[2].markdown(f"深度「{cfg.get('depth')}」")
+    c_top[3].markdown(f"风格「{cfg.get('style') or '默认'}」")
     if target > 0:
         st.progress(min(1.0, answered_before / target))
-    st.markdown("---")
 
-    # 即时反馈（上轮判定，仅非「结束后一起看」模式展示）
+    # 即时反馈（上轮判定 + 参考答案；仅非「结束后一起看」模式展示）
     fb = st.session_state.get("iv_feedback")
-    if fb and cfg.get("review_mode") != "结束后一起看":
-        r = fb.get("round_no") or 0
-        if r < t["round_no"]:
-            comment = fb.get("comment", "") if show_comment_enabled(cfg) else ""
-            st.markdown(f"**上一题** {verdict_badge(fb.get('verdict'))}　{comment}", unsafe_allow_html=True)
+    if fb and cfg.get("review_mode") != "结束后一起看" and (fb.get("round_no") or 0) < t["round_no"]:
+        comment = fb.get("comment", "") if show_comment_enabled(cfg) else ""
+        if comment:
+            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}　{comment}", unsafe_allow_html=True)
+        else:
+            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}", unsafe_allow_html=True)
+        ref = (fb.get("reference") or "").strip()
+        if ref:
+            parts = [x.strip() for x in ref.split("|") if x.strip()]
+            ref_body = "\n".join(f"- {p}" for p in parts) if len(parts) > 1 else ref
+            st.info(f"**📌 参考答案要点**\n\n{ref_body}")
+        st.markdown("---")
 
-    st.markdown(f"**第 {t['round_no']} 题 / ~{target} 题**")
-    st.markdown(f"> {t['question']}")
-    if cfg.get("review_mode") == "结束后一起看":
-        st.caption("（真实面试不点评——安心答，结束一起看判定）")
+    # —— 当前问题（大字卡片）——
+    with st.container(border=True):
+        st.markdown(f"#### 第 {t['round_no']} 题")
+        st.markdown(t["question"])
+        if cfg.get("review_mode") == "结束后一起看":
+            st.caption("（真实面试模式——当场不公布判定，全部结束后在报告里一起看）")
 
     st.text_area(
         "你的回答",
-        height=160,
-        placeholder="在此输入你的回答（可换行、可写推导）。答不上就点下方「没答上/跳过」。",
+        height=150,
+        placeholder="在此输入你的回答（可换行、可写推导）。答不上就点下方「没答上 / 跳过」。",
         key="iv_ans_input",
     )
-    b1, b2, b3 = st.columns([1, 1, 1])
+    b1, b2, b3 = st.columns([1.4, 1.4, 1.2])
     with b1:
         do_submit = st.button("提交回答", type="primary", use_container_width=True)
     with b2:
         do_skip = st.button("没答上 / 跳过", use_container_width=True)
     with b3:
-        do_end = st.button("提前结束面试", use_container_width=True)
+        do_end = st.button("结束面试", use_container_width=True)
 
+    # —— 事件处理（位于渲染之后；改动状态后用 fragment 级 rerun 刷新上方 UI）——
     if do_end:
         interview.manual_finish(sid)
         st.session_state.pop("iv_feedback", None)
-        st.rerun()
+        st.rerun()  # 整页：切到结业报告
+        return
 
     answer = st.session_state.get("iv_ans_input", "").strip()
     if do_submit and not answer:
         st.warning("回答为空——若确实没答上，请点「没答上 / 跳过」。")
         return
     if do_submit or do_skip:
-        st.session_state.pop("iv_ans_input", None)
+        st.session_state.pop("iv_ans_input", None)  # 先清空，fragment 刷新后输入框为空
         try:
             with st.spinner("面试官判定中…"):
                 out = interview.submit_answer(sid, answer if do_submit else "")
@@ -389,18 +429,20 @@ def render_answer_panel(sid, s):
             st.error(str(e))
             return
         except Exception as e:  # noqa: BLE001
-            st.error(f"本轮推进失败：{e}（可直接「提前结束面试」保住已答记录）")
+            st.error(f"本轮推进失败：{e}（可直接「结束面试」保住已答记录）")
             return
         if out.get("finished"):
             st.session_state.pop("iv_feedback", None)
-            st.rerun()
+            st.rerun()  # 整页：切到结业报告
+            return
         if out.get("judged"):
             st.session_state["iv_feedback"] = {
                 "round_no": t["round_no"],
                 "verdict": out["judged"].get("verdict"),
                 "comment": out["judged"].get("comment", ""),
+                "reference": out["judged"].get("reference", ""),
             }
-        st.rerun()
+        st.rerun(scope="fragment")  # 局部刷新：展示新题 + 即时反馈，图谱不重建
 
 
 def render_tab_live():
@@ -413,9 +455,9 @@ def render_tab_live():
     if sid:
         s = interview.get_session(sid)
         if s["status"] == "active":
-            render_answer_panel(sid, s)
-            st.markdown("---")
-            render_setup(disabled=True)
+            # 专注答题视图：不混入"开始新面试"设置表单；结束本场后才回到设置
+            render_live_fragment(sid)
+            st.caption("本页签专注答题——切到「🗺 知识图谱 / 📋 历史与薄弱」查看不受影响，回来继续作答。")
             return
         # 刚结束 / 上次看到的已完成场次 → 展示报告
         try:
