@@ -230,7 +230,7 @@ def render_report(rpt):
     st.subheader(f"结业报告 · {rpt['scope_title']}")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("总题数", rpt["n_turns"])
-    c2.metric("得分", f"{rpt['score_pct']}%")
+    c2.metric("平均得分", f"{rpt['score_pct']} / 100")
     c3.metric("评级", rpt["grade"])
     c4.metric("覆盖节点", f"{rpt['coverage']['asked']}/{rpt['coverage']['total']}")
     st.caption(
@@ -241,8 +241,8 @@ def render_report(rpt):
     )
     band_txt = " · ".join(f"{g} ≥ {int(thr * 100)} 分" for thr, g, _ in config.GRADE_BANDS)
     st.caption(
-        f"**评分口径**：答对 = 1 分 · 部分正确 = 0.6 分 · 答错/未答/跑题 = 0 分 → "
-        f"本场得分 **{rpt['score_pct']}%**。档位：{band_txt}。"
+        f"**评分口径**：每题由 AI 面试官按要点覆盖率打 0~100 分（答对 80+ · 部分 55~79 · "
+        f"答错 20~54 · 未答/跑题 ≤20），本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
     )
     st.markdown(f"**评级 {rpt['grade']}**　{rpt['grade_cn']}")
 
@@ -263,7 +263,9 @@ def render_report(rpt):
     for a in rpt["answered"]:
         with st.expander(f"Q{a['round_no']} · {a['question'][:48]}"):
             # unsafe_allow_html=True：verdict_badge 的 span 徽章要真正渲染成 HTML
-            st.markdown(f"{verdict_badge(a['verdict'])}　**问题**：{a['question']}", unsafe_allow_html=True)
+            sc = a.get("score")
+            score_txt = f"　得分 **{sc}**" if sc is not None else ""
+            st.markdown(f"{verdict_badge(a['verdict'])}{score_txt}　**问题**：{a['question']}", unsafe_allow_html=True)
             if a["user_answer"]:
                 st.markdown(f"**你的回答**：\n\n{a['user_answer']}")
             else:
@@ -373,14 +375,15 @@ def render_live_fragment(sid: str):
     if target > 0:
         st.progress(min(1.0, answered_before / target))
 
-    # 即时反馈（上轮判定 + 参考答案；仅非「结束后一起看」模式展示）
+    # 即时反馈（上轮判定 + 得分 + 参考答案；仅非「结束后一起看」模式展示）
     fb = st.session_state.get("iv_feedback")
     if fb and cfg.get("review_mode") != "结束后一起看" and (fb.get("round_no") or 0) < t["round_no"]:
         comment = fb.get("comment", "") if show_comment_enabled(cfg) else ""
+        score_txt = f" · 得分 **{fb['score']}**" if fb.get("score") is not None else ""
         if comment:
-            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}　{comment}", unsafe_allow_html=True)
+            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}{score_txt}　{comment}", unsafe_allow_html=True)
         else:
-            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}", unsafe_allow_html=True)
+            st.markdown(f"**上一题判定**：{verdict_badge(fb.get('verdict'))}{score_txt}", unsafe_allow_html=True)
         ref = (fb.get("reference") or "").strip()
         if ref:
             parts = [x.strip() for x in ref.split("|") if x.strip()]
@@ -439,6 +442,7 @@ def render_live_fragment(sid: str):
             st.session_state["iv_feedback"] = {
                 "round_no": t["round_no"],
                 "verdict": out["judged"].get("verdict"),
+                "score": out["judged"].get("score"),
                 "comment": out["judged"].get("comment", ""),
                 "reference": out["judged"].get("reference", ""),
             }

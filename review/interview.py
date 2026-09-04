@@ -455,6 +455,21 @@ def ask_first(sid: str) -> dict:
     return {"round_no": 1, "question": q, "node_ids": nids}
 
 
+def _norm_score(raw, verdict: str) -> int:
+    """把 LLM 的 score 规整为 0~100 整数；缺省/非法时按 verdict 回退；
+    score 超出 verdict 档位区间时 clamp 到区间端点（如 partial+95 → 79，
+    保留"判分高但标签保守"的高分信号，不抹到档位锚点）。"""
+    try:
+        s = int(raw)
+    except (TypeError, ValueError):
+        s = config.SCORE_FALLBACK.get(verdict, 0)
+    s = max(0, min(100, s))
+    lo, hi = config.VERDICT_SCORE_RANGE.get(verdict, (0, 100))
+    if not (lo <= s <= hi):
+        s = min(hi, max(lo, s))
+    return s
+
+
 def submit_answer(sid: str, answer: str) -> dict:
     """提交当前题回答（空串 = 跳过/未作答）→ 判定上一答 + 推进下一题。
 
@@ -518,6 +533,7 @@ def submit_answer(sid: str, answer: str) -> dict:
     weak = [x for x in (data.get("weak_nodes") or []) if x in _nodes]
     judgment = {
         "verdict": verdict,
+        "score": _norm_score(data.get("score"), verdict),  # 0~100 连续分（与档位联动）
         "comment": (data.get("comment") or "").strip(),
         "reference": (data.get("reference") or "").strip(),  # 参考答案要点（判后展示对照）
         "weak_nodes": weak,
@@ -552,6 +568,7 @@ def manual_finish(sid: str):
     if current:
         judgment = {
             "verdict": "unanswered",
+            "score": 0,
             "comment": "面试被主动结束",
             "weak_nodes": json.loads(current["node_ids"] or "[]"),
         }
@@ -579,6 +596,7 @@ def build_report(sid: str) -> dict:
                 "node_ids": json.loads(t["node_ids"] or "[]"),
                 "user_answer": t["user_answer"] or "",
                 "verdict": j.get("verdict"),
+                "score": int(j.get("score", config.SCORE_FALLBACK.get(j.get("verdict"), 0))),  # 0~100；旧数据无 score 按档位回退
                 "comment": j.get("comment", ""),
                 "reference": j.get("reference", ""),  # 参考答案要点（判后对照复习）
                 "weak_nodes": j.get("weak_nodes", []),
@@ -587,10 +605,10 @@ def build_report(sid: str) -> dict:
 
     verdict_cnt = Counter(a["verdict"] for a in answered if a["verdict"])
     n = len(answered)
-    correct = verdict_cnt.get("correct", 0)
-    partial = verdict_cnt.get("partial", 0)
 
-    score = (correct + 0.6 * partial) / n if n else 0.0
+    # 得分 = 各题 AI 判定分(0~100)的平均 → /100 后套档位
+    avg_score = (sum(a["score"] for a in answered) / n) if n else 0.0
+    score = avg_score / 100.0
     grade, grade_cn = "D", config.GRADE_BANDS[-1][2]
     for thr, g, desc in config.GRADE_BANDS:
         if score >= thr:
@@ -623,13 +641,13 @@ def build_report(sid: str) -> dict:
         "scope_title": session["scope_title"],
         "n_turns": n,
         "verdict_cnt": {
-            "correct": correct,
-            "partial": partial,
+            "correct": verdict_cnt.get("correct", 0),
+            "partial": verdict_cnt.get("partial", 0),
             "wrong": verdict_cnt.get("wrong", 0),
             "unanswered": verdict_cnt.get("unanswered", 0),
             "offtopic": verdict_cnt.get("offtopic", 0),
         },
-        "score_pct": round(score * 100),
+        "score_pct": round(avg_score),  # 0~100 平均分
         "grade": grade,
         "grade_cn": grade_cn,
         "coverage": {"asked": coverage_asked, "total": len(content)},
