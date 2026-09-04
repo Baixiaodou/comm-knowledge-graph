@@ -1,6 +1,8 @@
-# 通信工程知识库 · Communication Knowledge Base v2
+<div align="center">
 
-> 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目。核心贡献有三：① 把通信工程课程知识组织为「节点 + 树层级 + Wiki 关联 + 思维链」三层结构；② 配套多模型评测体系，验证了优于朴素检索的最终检索方案（top-3 + links 扩展 + LLM 精挑）；③ 在检索流水线上实现多轮追问记忆，让"那反过来呢""补零呢"这类裸指代追问也能接续检索。
+# 通信工程知识库
+
+**Communication Knowledge Base v2** · 面向专业知识问答的 RAG 知识图谱
 
 <p align="center">
   <img src="https://img.shields.io/badge/节点-90-2b6cb0?style=flat-square" alt="nodes">
@@ -12,22 +14,21 @@
   <img src="https://img.shields.io/badge/license-MIT-9aa5b1?style=flat-square" alt="license">
 </p>
 
+</div>
+
+> 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目。核心贡献有三：① 把通信工程课程知识组织为「节点 + 树层级 + Wiki 关联 + 思维链」三层结构；② 配套多模型评测体系，验证了优于朴素检索的最终检索方案（top-3 + links 扩展 + LLM 精挑）；③ 在检索流水线上实现多轮追问记忆，让"那反过来呢""补零呢"这类裸指代追问也能接续检索。
+
 ## 目录
 
-- [为什么做这个项目](#为什么做这个项目)
-- [项目全景](#项目全景)
-- [核心结果](#核心结果)
-- [快速开始](#快速开始)
-- [知识库设计](#知识库设计)
-- [检索方案研究](#检索方案研究)
-- [评测体系](#评测体系)
-- [AI 模拟面试训练器（review 插件）](#ai-模拟面试训练器review-插件)
-- [多轮追问提升](#多轮追问提升)
-- [模糊大问题路由（fuzzy_hub_rag）](#模糊大问题路由fuzzy_hub_rag)
-- [配套 skill：文档吸收（kb-ingest）](#配套-skill文档吸收kb-ingest)
-- [项目结构](#项目结构)
-- [设计文档](#设计文档)
-- [License](#license)
+| | |
+|:---|:---|
+| [🎯 为什么做这个项目](#为什么做这个项目) | [🚀 快速开始](#快速开始) |
+| [🗺️ 项目全景](#项目全景) | [🏗️ 知识库设计](#知识库设计) |
+| [📊 核心结果](#核心结果) | [🔍 检索方案研究](#检索方案研究) |
+| [🧪 评测体系](#评测体系) | [🎤 AI 模拟面试训练器（review 插件）](#ai-模拟面试训练器review-插件) |
+| [🔁 多轮追问提升](#多轮追问提升) | [🧭 模糊大问题路由（fuzzy_hub_rag）](#模糊大问题路由fuzzy_hub_rag) |
+| [📥 配套 skill：文档吸收（kb-ingest）](#配套-skill文档吸收kb-ingest) | [🗂️ 项目结构](#项目结构) |
+| [📚 设计文档](#设计文档) | [⚖️ License](#license) |
 
 ---
 
@@ -162,6 +163,9 @@ flowchart LR
 
 frontmatter 承载元信息，正文承载知识：
 
+<details>
+<summary><b>查看完整节点示例（frontmatter + links + cot）</b></summary>
+
 ```yaml
 ---
 id: mob-ofdm
@@ -184,6 +188,8 @@ cot:
   conclusion: "高速→低速 + 正交 + CP 循环卷积，把频率选择性信道分解成平坦子信道"
 ---
 ```
+
+</details>
 
 ### 3. 树层级：七棵主题树
 
@@ -450,6 +456,9 @@ flowchart LR
 
 ## 🗂️ 项目结构
 
+<details>
+<summary><b>展开完整目录树</b></summary>
+
 ```text
 knowledge-base/
 ├── knowledge-v2/            # 知识库本体（核心）
@@ -476,6 +485,8 @@ knowledge-base/
 └── docs/                    # 设计文档 01-08
 ```
 
+</details>
+
 ---
 
 ## 📚 设计文档
@@ -493,3 +504,9 @@ knowledge-base/
 ## ⚖️ License
 
 本项目采用 [MIT License](LICENSE)。
+
+<div align="center">
+
+**[⬆ 回到目录](#目录)**
+
+</div>
