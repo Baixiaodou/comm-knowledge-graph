@@ -16,11 +16,10 @@ from collections import Counter
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from multiturn_rag.followup_rag import FollowupRAG
+from multiturn_rag.followup_rag import DEFAULT_TECH_RE, FollowupRAG
 
-# 技术词表（模拟线上 _is_short_chat 的技术词，should_skip 用它区分"技术短句"与"闲聊"）
-TECH_RE = re.compile(
-    r"(FFT|DFT|DTFT|卷积|滤波|采样|混叠|频谱|信号|噪声|带宽|信噪比|衰落|多普勒|瑞利|莱斯|信道|编码|OFDM|调频|FM|AM|DSB|SSB|相位|频域|时域|功率|能量|香农|交织|循环码|频率|调制|解调|正交|MIMO|天线|电磁|傅里叶|拉普拉斯|Z变换|冲激|窗函数|吉布斯|奈奎斯特|抽取|内插|上采样|下采样|采样率|分辨率|线性|因果|稳定|极点|零点|反馈|双线性|预畸变|群时延|码间串扰|幅度|相位失真|FIR|IIR|切比雪夫|巴特沃斯|高斯|随机|包络|相干|多径|直射|反射|路径损耗|生成多项式|纠错|检错|冗余|频谱泄露|栅栏效应|加窗|主瓣|旁瓣|过渡带|LTE|均衡器|模型|GPU|显存|量化)")
+# 技术词表单源：multiturn_rag.followup_rag.DEFAULT_TECH_RE（勿本地复制——曾与 eval_followup 漂移）
+TECH_RE = DEFAULT_TECH_RE
 
 plugin = FollowupRAG(tech_re=TECH_RE)
 
@@ -64,3 +63,4 @@ if os.path.exists(qs_path):
     print(f"\n全题库判定分布: {dict(c)}")
 
 print("\n结论:", "✅ 全部通过" if ok else "❌ 有 FAIL，需检查")
+sys.exit(0 if ok else 1)  # 供 CI/质量门判红绿（此前缺退出码 → 失败也恒绿）

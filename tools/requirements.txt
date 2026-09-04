@@ -1,4 +1,4 @@
-# knowledge-base 工具脚本依赖（tools/*.py 评测与工具）
-openai>=1.0          # kb_benchmark / eval_followup 的 LLM 调用
-PyYAML>=6.0          # 节点 frontmatter 解析
-python-dotenv>=1.0   # tools/.env 加载
+# knowledge-base 工具脚本依赖（tools/*.py 评测与工具；测试环境：openai 1.54 / PyYAML 6.0 / dotenv 1.2）
+openai>=1.0,<2.0          # kb_benchmark / eval_followup 的 LLM 调用
+PyYAML>=6.0,<7.0          # 节点 frontmatter 解析
+python-dotenv>=1.0,<2.0   # tools/.env 加载

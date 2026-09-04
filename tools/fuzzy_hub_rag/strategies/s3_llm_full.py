@@ -1,7 +1,7 @@
-"""S3：TF-IDF 分流 + LLM 一次调用（兜底确认 HUB/LEAF + 从全部 19 hub 语义选点）
+"""S3：TF-IDF 分流 + LLM 一次调用（兜底确认 HUB/LEAF + 从全量 hub 语义选点）
 
 用户提议的合并方案：确认与选点一次调用完成，不信任 TF-IDF 对 hub 的排序，
-选点基于全量 19 hub 的语义理解。
+选点基于全量 hub 的语义理解。
 """
 
 from .base import BaseStrategy, parse_json_reply
@@ -10,7 +10,7 @@ from .prompts import ROUTE_SYSTEM, build_route_user
 
 class S3(BaseStrategy):
     name = "S3"
-    desc = "TF-IDF 分流 + LLM 一次调用（确认 HUB/LEAF + 从全部 19 hub 语义选 1-2 个）"
+    desc = "TF-IDF 分流 + LLM 一次调用（确认 HUB/LEAF + 从全量 hub 语义选 1-2 个）"
 
     def _route_llm(self, query: str, menu: str) -> tuple[str, list[str]]:
         selection = (

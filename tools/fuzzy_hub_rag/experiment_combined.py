@@ -92,13 +92,14 @@ def main():
             exp = set(q["expected_hubs"])
             correct = path == "hub" and bool(exp)
             a_ok += 1 if correct else 0
+            q_hit1 = q_hit2 = False
             if correct:
                 decided += 1
                 if picked and picked[0] in exp:
-                    h1 += 1; h1d += 1
+                    h1 += 1; h1d += 1; q_hit1 = True
                 if any(p in exp for p in picked):
-                    h2 += 1; h2d += 1
-            details.append({"id": q["id"], "path": path, "picked": picked, "hit1": h1 if False else None})
+                    h2 += 1; h2d += 1; q_hit2 = True
+            details.append({"id": q["id"], "path": path, "picked": picked, "hit1": q_hit1, "hit2": q_hit2})
         results[k] = {
             "a_acc": a_ok / len(qs), "b_hit1": h1 / len(qs), "b_hit2": h2 / len(qs),
             "b_hit1_decided": h1d / decided if decided else 0,
@@ -106,7 +107,7 @@ def main():
             "decided": decided, "llm_calls": len(qs),
         }
         print(f"k={k}: 分类A={a_ok}/20={a_ok/20:.0%}  hit@1={h1}/20={h1/20:.0%}  hit@2={h2}/20={h2/20:.0%}  (判对{decided}题内 hit@2={h2d/decided:.0%})")
-    print("\nS5 全量 19 hub 对照: A=97.5% hit@1=85% hit@2=90%")
+    print("\nS5 全量 hub 对照（2026-08-25 快照结论，随库更新会漂移）: A=97.5% hit@1=85% hit@2=90%")
     out = os.path.join(HERE, "results", f"combined_{time.strftime('%Y%m%d_%H%M%S')}.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump({"ks": ks, "results": results}, f, ensure_ascii=False, indent=2)

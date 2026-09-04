@@ -41,3 +41,6 @@ review/data/
 benchmark/results/
 # fuzzy_hub_rag 实验结果数据（脚本可复现，不推）
 tools/fuzzy_hub_rag/results/
+
+# 本机启动脚本（含个人路径，不入库）
+*.cmd

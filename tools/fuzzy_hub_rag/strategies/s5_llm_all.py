@@ -10,7 +10,7 @@ from .prompts import ROUTE_SYSTEM, build_route_user
 
 class S5(BaseStrategy):
     name = "S5"
-    desc = "全 LLM 判定路由 + 全量 19 hub 选 1-2 个（上界对照，每问 1 次调用）"
+    desc = "全 LLM 判定路由 + 全量 hub 选 1-2 个（上界对照，每问 1 次调用）"
 
     def route(self, query: str):
         selection = (

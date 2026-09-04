@@ -42,11 +42,12 @@ class KB:
     """一次加载，供 benchmark/annotate/strategies 共享"""
 
     def __init__(self):
-        self.nodes: list[dict] = []          # 全部 84 节点
+        # 数量不写死：随 knowledge-v2/nodes 更新自动变化（2026-09-04 实况：90 = 20 hub + 70 core/leaf）
+        self.nodes: list[dict] = []
         self.by_id: dict[str, dict] = {}
         self.title_map: dict[str, str] = {}
-        self.hubs: list[dict] = []           # type == hub（19 个：root + 18 枝干）
-        self.leaves: list[dict] = []         # type in (core, leaf)（65 个，正常检索池）
+        self.hubs: list[dict] = []           # type == hub（含 root；数量随知识库，勿依赖写死值）
+        self.leaves: list[dict] = []         # type in (core, leaf)，正常检索池
         self.children: dict[str, list[str]] = {}  # hub_id -> 直接子节点 id 列表
         self.idf: dict[str, float] = {}
         self.loaded = False
@@ -135,7 +136,7 @@ class KB:
         return out
 
     def hub_menu(self) -> str:
-        """19 hub 菜单文本（标注 prompt 用）"""
+        """hub 菜单文本（标注 prompt 用；运行时取自 self.hubs，全量随知识库更新）"""
         return "\n".join(self.hub_brief(h) for h in self.hubs)
 
 

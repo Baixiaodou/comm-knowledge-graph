@@ -7,6 +7,10 @@
 4. retrieve() 完整路径：开关开 → 模糊轮走 hub 注入；开关关 → 与现状一致
 
 用法：.venv/Scripts/python 知识库研究/knowledge-base/tools/fuzzy_hub_rag/verify_online.py
+
+⚠️ 内部验证工具（非通用复现脚本）：依赖仓库外代码（线上插件的
+src/plugins/ai_chat/fuzzy_hub_rag.py 在 QQ bot 服务器，不在本仓库）与本机 API key 文件，
+读者无法直接复现。正式实验结论以 fuzzy_benchmark.py 为准。
 """
 import asyncio
 import os

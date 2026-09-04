@@ -29,7 +29,7 @@ from collections import defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import kb_benchmark as kb  # 复用 _tokenize / _tfidf_similarity / _load_node_meta / load_env
-from multiturn_rag.followup_rag import FollowupRAG  # 追问判定唯一实现（与线上同源）
+from multiturn_rag.followup_rag import DEFAULT_TECH_RE, FollowupRAG  # 追问判定唯一实现（与线上同源）
 
 BASE = kb.BASE
 QUESTIONS_PATH = os.path.join(BASE, "benchmark", "multiturn_questions.json")
@@ -46,9 +46,9 @@ COS_CONFIRM = 0.10      # 复合变体（compound/clean_compound）的余弦确�
 # gate 支持的模型（复用 kb 的 MODELS）
 GATE_MODELS = {m["name"]: m for m in kb.MODELS}
 
-# 闲聊前置过滤用的技术词表（模拟线上 _is_short_chat 的增强版）
-TECH_RE = re.compile(
-    r"(FFT|DFT|DTFT|卷积|滤波|采样|混叠|频谱|信号|噪声|带宽|信噪比|衰落|多普勒|瑞利|莱斯|信道|编码|OFDM|调频|FM|AM|DSB|SSB|相位|频域|时域|功率|能量|香农|交织|循环码|频率|调制|解调|正交|MIMO|天线|电磁|傅里叶|拉普拉斯|Z变换|冲激|窗函数|吉布斯|奈奎斯特|抽取|内插|上采样|下采样|采样率|分辨率|线性|因果|稳定|极点|零点|反馈|双线性|预畸变|群时延|码间串扰|幅度|相位失真|FIR|IIR|切比雪夫|巴特沃斯|高斯|随机|包络|相干|多径|直射|反射|路径损耗|生成多项式|纠错|检错|冗余|频谱泄露|栅栏效应|加窗|主瓣|旁瓣|过渡带|计算机网络|OSI|TCP|IP|HTTP|LTE|均衡器|智能体|模型|GPU|显存|量化|复习|面试|保研)")
+# 闲聊前置过滤用的技术词表（单源：multiturn_rag.followup_rag.DEFAULT_TECH_RE，
+# 含"计算机网络/面试/保研"等生活词防误拦——与 test_followup_rag.py 同源，勿再本地复制）
+TECH_RE = DEFAULT_TECH_RE
 
 # 追问判定插件（唯一实现来源：tools/multiturn_rag/followup_rag.py）
 _plugin = FollowupRAG(tech_re=TECH_RE, short_len=SHORT_LEN,
