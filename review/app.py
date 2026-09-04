@@ -289,8 +289,8 @@ def render_report(rpt):
 def render_setup(disabled):
     st.markdown("### 开始一场新面试")
     st.caption(
-        "面试官沿所选科目的知识点逐个设问，依据**节点原文**判定并自适应追问（答对才往深追，"
-        "答错下探查基础）；过程不泄露对错，结束后出结业报告并给图谱着色。"
+        "面试官沿所选科目的知识点逐个设问，依据**节点原文**判定并自适应追问；"
+        "过程不泄露对错，结束后出结业报告并给图谱着色。"
     )
     with st.form("iv_setup_form"):
         cur = st.session_state.get("iv_scope_root", "root")
@@ -304,22 +304,22 @@ def render_setup(disabled):
             format_func=lambda d: f"{d} 分钟", key="iv_dur",
         )
         depth = c2.selectbox(
-            "追问深度", config.INTERVIEW_DEPTHS, index=1, key="iv_depth"
+            "追问深度", config.INTERVIEW_DEPTHS, index=1, key="iv_depth",
+            help=lambda: config.DEPTH_DESC.get(st.session_state.get("iv_depth", "标准"), ""),
         )
         style = c3.selectbox(
-            "面试官风格", config.INTERVIEW_STYLES, index=0, key="iv_style"
+            "面试官风格", config.INTERVIEW_STYLES, index=0, key="iv_style",
+            help=lambda: config.STYLE_DESC.get(st.session_state.get("iv_style", "温和引导"), ""),
         )
         review_mode = c4.selectbox(
-            "点评时机", config.REVIEW_MODES, index=0, key="iv_rm"
+            "点评时机", config.REVIEW_MODES, index=0, key="iv_rm",
+            help="结束后一起看=真实面试不点评；每题立即看=答完立刻出判定；只判分不点评=只看分数。",
         )
-        st.caption(f"**{depth}**：{config.DEPTH_DESC.get(depth, '')}")
-        st.caption(f"**{style}**：{config.STYLE_DESC.get(style, '')}")
         weak_first = st.checkbox(
-            "优先复测上次面试答错的知识点（跨场次记忆）", value=True, key="iv_weak",
+            "优先复测上次答错的知识点", value=True, key="iv_weak",
             help="开新场时自动读历史场次，把答错/没答上的知识点排到最前优先复测，形成复习闭环。",
         )
-        st.caption(f"目标题数：约 {config.DURATION_ROUNDS[duration]} 题 · 建议每题作答 ≤ 2 分钟 · "
-                   f"「{review_mode}」模式")
+        st.caption(f"目标 ~{config.DURATION_ROUNDS[duration]} 题 · 每题 ≤2 分钟 · {review_mode}")
         submitted = st.form_submit_button("🎬 开始面试", type="primary", disabled=disabled)
     if disabled:
         st.caption("上方有进行中的面试，可先「结束本场」或直接继续作答。")
@@ -388,7 +388,8 @@ def render_live_fragment(sid: str):
         if ref:
             parts = [x.strip() for x in ref.split("|") if x.strip()]
             ref_body = "\n".join(f"- {p}" for p in parts) if len(parts) > 1 else ref
-            st.info(f"**📌 参考答案要点**\n\n{ref_body}")
+            st.caption("📌 参考答案要点")
+            st.markdown(ref_body)
         st.markdown("---")
 
     # —— 当前问题（大字卡片）——
@@ -467,7 +468,7 @@ def render_tab_live():
         if s["status"] == "active":
             # 专注答题视图：不混入"开始新面试"设置表单；结束本场后才回到设置
             render_live_fragment(sid)
-            st.caption("本页签专注答题——切到「🗺 知识图谱 / 📋 历史与薄弱」查看不受影响，回来继续作答。")
+            st.caption("答题中可切到其它页查看，回来继续作答。")
             return
         # 刚结束 / 上次看到的已完成场次 → 展示报告
         try:
@@ -619,10 +620,21 @@ def render_tab_hist():
                 st.text((nd.body or "")[:800] or "（节点无正文）")
 
 
-tab_live, tab_graph, tab_hist = st.tabs(["🎤 模拟面试", "🗺 知识图谱", "📋 历史与薄弱"])
-with tab_live:
+# ---------------- 单页导航（替代 st.tabs） ----------------
+# ⚠️ st.tabs 会全量执行所有页签 body——图谱 iframe 内嵌 1MB echarts，
+# 首屏/每次整页 rerun 都会把三页全部推给前端。
+# 改为顶部导航 + 只渲染当前视图：图谱按需加载，答题页始终轻快。
+_PAGES = ("🎤 模拟面试", "🗺 知识图谱", "📋 历史与薄弱")
+_nav = st.radio(
+    "导航",
+    _PAGES,
+    horizontal=True,
+    key="page_nav",
+    label_visibility="collapsed",
+)
+if _nav == "🎤 模拟面试":
     render_tab_live()
-with tab_graph:
+elif _nav == "🗺 知识图谱":
     render_tab_graph()
-with tab_hist:
+else:
     render_tab_hist()
