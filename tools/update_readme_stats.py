@@ -114,13 +114,12 @@ def update_readme(s):
     sub(r"思维链-(\d+)-", f"思维链-{s['cot']}-", "badge 思维链数")
     sub(r"连接-(\d+)-", f"连接-{s['links']}-", "badge 连接数")
 
-    # 2. 三类节点表格（| 🧠 `core` | 核心概念 | 带思维链... | 39 |）
-    #    首列 emoji 可选（\s*\S{0,2}\s* 吃掉图标 + 空格），改标题图标不会让同步失效
-    sub(r"(\|\s*\S{0,2}\s*`core` \| 核心概念 \| 带思维链[^\n]*\| )\d+ \|", rf"\g<1>{s['core']} |",
+    # 2. 三类节点表格（| `core` | 核心概念 | 带思维链... | 39 |）
+    sub(r"(\| `core` \| 核心概念 \| 带思维链[^\n]*\| )\d+ \|", rf"\g<1>{s['core']} |",
         "三类节点表 core")
-    sub(r"(\|\s*\S{0,2}\s*`hub` \| 分类枢纽 \| 统领子节点[^\n]*\| )\d+ \|", rf"\g<1>{s['hub']} |",
+    sub(r"(\| `hub` \| 分类枢纽 \| 统领子节点[^\n]*\| )\d+ \|", rf"\g<1>{s['hub']} |",
         "三类节点表 hub")
-    sub(r"(\|\s*\S{0,2}\s*`leaf` \| 叶子知识点 \| 具体知识点[^\n]*\| )\d+ \|", rf"\g<1>{s['leaf']} |",
+    sub(r"(\| `leaf` \| 叶子知识点 \| 具体知识点[^\n]*\| )\d+ \|", rf"\g<1>{s['leaf']} |",
         "三类节点表 leaf")
 
     # 3. 七棵主题树表格（| 通信原理 | 17 | 权衡 | ... |）
@@ -133,11 +132,9 @@ def update_readme(s):
         f"全库 {s['links']} 条连接中 **{s['cross_links']} 条跨树**",
         "links 描述")
 
-    # 5. 项目结构：90 个 .md 节点
-    #    行前缀（│ 或 |）与分支符（├── 或 ├─）都可能变——README 曾把 Unicode 框线
-    #    改成 ASCII（GitHub 等宽字体下框线是半角，缩进会错位），故前缀整体放宽
-    sub(r"(^\s*[│|]\s*├─+ nodes/\s*# )\d+( 个 \.md 节点)",
-        rf"\g<1>{s['total']}\g<2>", "项目结构 nodes 数", flags=re.MULTILINE)
+    # 5. 项目结构：90 个 .md 节点（注意用全角 │）
+    sub(r"(│   ├── nodes/\s*# )\d+( 个 \.md 节点)",
+        rf"\g<1>{s['total']}\g<2>", "项目结构 nodes 数")
 
     with open(README, "w", encoding="utf-8") as f:
         f.write(text)
