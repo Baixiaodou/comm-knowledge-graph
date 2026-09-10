@@ -46,7 +46,9 @@ PUBLISHED = [
     ("Qwen/Qwen3-8B",     "Qwen3-8B",   (7.043, 7.612, 8.07, 0.667)),
 ]
 ANTI_PREFIX = "H-"          # 反直觉/难题子集题号前缀（15 题）
-XLIM = (6.5, 8.62)          # 横轴自 6.5 起（图注已注明）
+# 横轴范围：只留必要余量。旧版 6.5 起 → 41.8% 横向空间是空白，
+# 点被挤成一团、右端增益列又贴着图表边。现收到 6.85 起，数据用满 ~82%。
+XLIM = (6.85, 8.55)
 
 
 # ── 统计 ────────────────────────────────────────────────────────────
@@ -124,22 +126,29 @@ def compute():
 def _row_lines(ax, n):
     """每行一条极浅参考线（森林图惯例，比隔行底色克制）"""
     for i in range(n):
-        ax.axhline(n - 1 - i, color="#eef1f4", lw=0.9, zorder=0)
+        ax.axhline(n - 1 - i, color=PALETTE["rowline"], lw=0.7, zorder=0, xmax=0.965)
 
 
 def _dots(ax, x, y, kind, scale=1.0):
     """圆点（白描边，压住穿过的 CI 线）"""
-    size = (58 if kind == "kb" else 46) * scale
+    size = (40 if kind == "kb" else 32) * scale
     ax.scatter([x], [y], s=size, color=PALETTE[kind], zorder=4,
-               edgecolor="white", linewidth=1.0)
+               edgecolor="white", linewidth=0.8)
 
 
 def draw_forest(rows, out_path, has_data):
-    """README 内嵌版：无图内标题、无长脚注（口径写在 README 图注里）"""
+    """README 内嵌版：无图内标题、无长脚注（口径写在 README 图注里）
+
+    2026-09-10 重做要点：
+      · 绘图区左边界收窄、纵向压缩，去掉两端空白（旧版横向浪费 41.8%）；
+      · 右侧增益列与绘图区拉开间距、两行数值对齐成「粗上细下」；
+      · 字号整体下调一档，点径缩小，线宽变细 —— 观感更克制。
+    """
     plt = use_style()
     n = len(rows)
-    fig = plt.figure(figsize=(6.8, 3.0), dpi=300)
-    ax = fig.add_axes([0.150, 0.250, 0.605, 0.655])
+    fig = plt.figure(figsize=(7.0, 2.30), dpi=300)
+    #         [left, bottom, width, height]
+    ax = fig.add_axes([0.115, 0.225, 0.665, 0.735])
 
     _row_lines(ax, n)
     for i, r in enumerate(rows):
@@ -147,36 +156,42 @@ def draw_forest(rows, out_path, has_data):
         if r.get("ci"):
             c = r["bare"] + r["diff"]
             lo, hi = r["ci"]
-            ax.errorbar([c], [y], xerr=[[c - (r["bare"] + lo)], [(r["bare"] + hi) - c]],
-                        fmt="none", ecolor=PALETTE["kb"], elinewidth=1.2,
-                        capsize=3.0, capthick=1.2, zorder=3)
+            # CI 线在下方、点在上方 —— 同一条 y 值会互相压住，明确分层
+            ax.errorbar([c], [y - 0.16], xerr=[[c - (r["bare"] + lo)], [(r["bare"] + hi) - c]],
+                        fmt="none", ecolor=PALETTE["kb"], elinewidth=0.9,
+                        capsize=2.4, capthick=0.9, alpha=0.75, zorder=3)
         _dots(ax, r["bare"], y, "baseline")
         _dots(ax, r["kb"], y, "kb")
-        # 右侧增益列：相对提升（粗）+ 绝对增益
-        ax.text(1.05, y + 0.20, f"+{r['rel']:.2f}%", transform=ax.get_yaxis_transform(),
+        # 右侧增益列：相对提升（粗、蓝）+ 绝对增益（细、灰），两行紧贴成一组
+        ax.text(1.042, y + 0.150, f"+{r['rel']:.2f}%", transform=ax.get_yaxis_transform(),
                 fontsize=FS["gain"], color=PALETTE["kb"], weight="bold", va="center", ha="left")
-        ax.text(1.05, y - 0.22, f"+{r['gap']:.3f}", transform=ax.get_yaxis_transform(),
-                fontsize=FS["value"] - 1, color=PALETTE["kb"], va="center", ha="left")
-    ax.text(1.05, n - 1 + 0.55, "增益", transform=ax.get_yaxis_transform(),
+        ax.text(1.042, y - 0.225, f"+{r['gap']:.3f}", transform=ax.get_yaxis_transform(),
+                fontsize=FS["value"], color=PALETTE["sub"], va="center", ha="left")
+    ax.text(1.042, n - 1 + 0.60, "相对提升", transform=ax.get_yaxis_transform(),
             fontsize=FS["note"], color=PALETTE["muted"], va="center", ha="left")
 
     ax.set_yticks([n - 1 - i for i in range(n)])
     ax.set_yticklabels([r["name"] for r in rows], fontsize=FS["row"], color=PALETTE["body"])
     ax.set_xlim(*XLIM)
-    ax.set_ylim(-0.5, n - 0.5)
+    ax.set_ylim(-0.60, n - 0.40)
     ax.set_xticks([7.0, 7.5, 8.0, 8.5])
-    ax.tick_params(axis="x", labelsize=FS["note"], colors=PALETTE["sub"], length=3)
-    ax.tick_params(axis="y", length=0)
+    ax.tick_params(axis="x", labelsize=FS["note"], colors=PALETTE["sub"], length=2.6, pad=3)
+    ax.tick_params(axis="y", length=0, pad=6)
     strip_axes(ax)
 
     from matplotlib.lines import Line2D
     handles = [
-        Line2D([], [], marker="o", ls="none", color=PALETTE["baseline"], markersize=6, label="裸跑"),
-        Line2D([], [], marker="o", ls="none", color=PALETTE["kb"], markersize=6.5, label="加知识库"),
-        Line2D([], [], color=PALETTE["kb"], lw=1.2, label="95% CI（配对差值）"),
+        Line2D([], [], marker="o", ls="none", color=PALETTE["baseline"],
+               markersize=5, label="裸跑"),
+        Line2D([], [], marker="o", ls="none", color=PALETTE["kb"],
+               markersize=5.5, label="加知识库"),
+        Line2D([], [], color=PALETTE["kb"], lw=0.9, alpha=0.75, label="95% CI（配对差值）"),
     ]
-    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.148, 0.055), ncol=3,
-               frameon=False, fontsize=FS["note"], handletextpad=0.5, columnspacing=2.0)
+    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.113, 0.035), ncol=3,
+               frameon=False, fontsize=FS["note"], handletextpad=0.45,
+               columnspacing=1.7, borderpad=0)
+    for t in fig.legends[-1].get_texts():
+        t.set_color(PALETTE["sub"])
 
     if not has_data:
         footer(fig, ["未找到原始评测结果，本图未绘制 95% CI（可跑 tools/kb_benchmark.py 复现）"],
