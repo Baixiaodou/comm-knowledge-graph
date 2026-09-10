@@ -2,13 +2,17 @@
 """生成五模型增益图（benchmark/gain_chart.png）。
 
 版式（--variant）：
-  forest    默认。横向森林图，供 README 内嵌：每行一条浅灰参考线，
-            灰点=裸跑、蓝点=加知识库，细线加端帽=配对差值 95% CI，
-            右侧一列给出相对提升与绝对增益。图内不放标题与长脚注
-            （学术惯例：标题与口径写进图注，即 README 图下方的说明）。
-  dumbbell  竖版哑铃图，供 PPT 单页使用：在每个点旁直标原始分数，不带 CI，带图内标题。
+  forest    默认。横向森林图，供 README 内嵌：每行一条极浅参考线，
+            起始段用浅灰粗线连到结果点（哑铃），点=各臂均分，
+            蓝色细线加端帽=配对差值 95% CI，右侧一列相对提升。
+            图内不放标题与长脚注——标题与口径写进 README 图注。
+  dumbbell  竖版哑铃图，供 PPT 单页使用：在每个点旁直标原始分数，带图内标题。
 
-配色只用「灰 + 单一蓝」，无隔行底色、无网格、无边框。
+视觉（2026-09-10 第二次重做，对齐 Apple-design 模板 00002）：
+  · 单一 Action Blue #0066cc 承载全部强调，其余一律中性灰；
+  · 起始段用「浅灰粗连接条」表现 裸跑 → 加知识库 的迁移，替代旧版两个孤立圆点；
+  · 行名与数值拉开层级靠字重（600 / 400）与留白，不再靠放大字号；
+  · 去掉隔行底色、网格、边框，只留极浅参考线与底部轴线。
 
 数据来源：benchmark/results/merged_full_20260822.json（现算配对统计）。
 results/ 不入库，缺失时回退到 README 已发布的聚合值（此时不画 CI，并在终端提示）。
@@ -46,9 +50,8 @@ PUBLISHED = [
     ("Qwen/Qwen3-8B",     "Qwen3-8B",   (7.043, 7.612, 8.07, 0.667)),
 ]
 ANTI_PREFIX = "H-"          # 反直觉/难题子集题号前缀（15 题）
-# 横轴范围：只留必要余量。旧版 6.5 起 → 41.8% 横向空间是空白，
-# 点被挤成一团、右端增益列又贴着图表边。现收到 6.85 起，数据用满 ~82%。
-XLIM = (6.85, 8.55)
+# 横轴范围：起点略低于最小值给点留白，终点留出端点帽与右侧增益列的空间。
+XLIM = (6.90, 8.55)
 
 
 # ── 统计 ────────────────────────────────────────────────────────────
@@ -124,78 +127,85 @@ def compute():
 
 # ── 绘制 ────────────────────────────────────────────────────────────
 def _row_lines(ax, n):
-    """每行一条极浅参考线（森林图惯例，比隔行底色克制）"""
+    """每行一条极浅参考线（比轴线更弱，只做视线引导）"""
     for i in range(n):
-        ax.axhline(n - 1 - i, color=PALETTE["rowline"], lw=0.7, zorder=0, xmax=0.965)
+        ax.axhline(n - 1 - i, color=PALETTE["rowline"], lw=1.1, zorder=0, xmax=0.985)
 
 
-def _dots(ax, x, y, kind, scale=1.0):
-    """圆点（白描边，压住穿过的 CI 线）"""
-    size = (40 if kind == "kb" else 32) * scale
-    ax.scatter([x], [y], s=size, color=PALETTE[kind], zorder=4,
-               edgecolor="white", linewidth=0.8)
+def _dot(ax, x, y, color, size):
+    """圆点：白描边，压住穿过的连接条与 CI 线，形成干净堆叠"""
+    ax.scatter([x], [y], s=size, color=color, zorder=4,
+               edgecolor="white", linewidth=1.1)
 
 
 def draw_forest(rows, out_path, has_data):
     """README 内嵌版：无图内标题、无长脚注（口径写在 README 图注里）
 
-    2026-09-10 重做要点：
-      · 绘图区左边界收窄、纵向压缩，去掉两端空白（旧版横向浪费 41.8%）；
-      · 右侧增益列与绘图区拉开间距、两行数值对齐成「粗上细下」；
-      · 字号整体下调一档，点径缩小，线宽变细 —— 观感更克制。
+    2026-09-10 第二次重做：
+      · 起始段改为浅灰粗连接条 —— 一眼看出「从哪升到哪」；
+      · 单一 Action Blue 承载全部强调，其余中性灰；
+      · 右侧增益列改单行（相对提升），行名与数值靠字重分层。
     """
     plt = use_style()
     n = len(rows)
-    fig = plt.figure(figsize=(7.0, 2.30), dpi=300)
+    fig = plt.figure(figsize=(7.2, 2.45), dpi=300)
     #         [left, bottom, width, height]
-    ax = fig.add_axes([0.115, 0.225, 0.665, 0.735])
+    ax = fig.add_axes([0.135, 0.215, 0.645, 0.740])
 
     _row_lines(ax, n)
     for i, r in enumerate(rows):
         y = n - 1 - i
+        # ① 连接条：裸跑 → 加知识库（浅灰，圆头，给点径留出视觉呼吸）
+        if abs(r["kb"] - r["bare"]) > 0.02:
+            ax.plot([r["bare"], r["kb"]], [y, y], color=PALETTE["baseline-base"],
+                    lw=6.0, solid_capstyle="round", zorder=2)
+        # ② CI：配对差值区间，细线 + 端帽，位于同一行
         if r.get("ci"):
             c = r["bare"] + r["diff"]
             lo, hi = r["ci"]
-            # CI 线在下方、点在上方 —— 同一条 y 值会互相压住，明确分层
-            ax.errorbar([c], [y - 0.16], xerr=[[c - (r["bare"] + lo)], [(r["bare"] + hi) - c]],
-                        fmt="none", ecolor=PALETTE["kb"], elinewidth=0.9,
-                        capsize=2.4, capthick=0.9, alpha=0.75, zorder=3)
-        _dots(ax, r["bare"], y, "baseline")
-        _dots(ax, r["kb"], y, "kb")
-        # 右侧增益列：相对提升（粗、蓝）+ 绝对增益（细、灰），两行紧贴成一组
-        ax.text(1.042, y + 0.150, f"+{r['rel']:.2f}%", transform=ax.get_yaxis_transform(),
-                fontsize=FS["gain"], color=PALETTE["kb"], weight="bold", va="center", ha="left")
-        ax.text(1.042, y - 0.225, f"+{r['gap']:.3f}", transform=ax.get_yaxis_transform(),
-                fontsize=FS["value"], color=PALETTE["sub"], va="center", ha="left")
-    ax.text(1.042, n - 1 + 0.60, "相对提升", transform=ax.get_yaxis_transform(),
-            fontsize=FS["note"], color=PALETTE["muted"], va="center", ha="left")
+            ax.errorbar([c], [y], xerr=[[c - (r["bare"] + lo)], [(r["bare"] + hi) - c]],
+                        fmt="none", ecolor=PALETTE["kb"], elinewidth=1.0,
+                        capsize=2.6, capthick=1.0, alpha=0.85, zorder=3)
+        # ③ 两个点：起点中性灰、终点 Action Blue
+        _dot(ax, r["bare"], y, PALETTE["axis"], 34)
+        _dot(ax, r["kb"], y, PALETTE["kb"], 46)
+        # ④ 右侧增益列：单行，Action Blue 加粗
+        ax.text(1.035, y, f"+{r['rel']:.1f}%", transform=ax.get_yaxis_transform(),
+                fontsize=FS["gain"], color=PALETTE["kb"], weight="bold",
+                va="center", ha="left")
 
     ax.set_yticks([n - 1 - i for i in range(n)])
-    ax.set_yticklabels([r["name"] for r in rows], fontsize=FS["row"], color=PALETTE["body"])
+    ax.set_yticklabels([r["name"] for r in rows], fontsize=FS["row"],
+                       color=PALETTE["body"], weight="600")
     ax.set_xlim(*XLIM)
-    ax.set_ylim(-0.60, n - 0.40)
+    ax.set_ylim(-0.62, n - 0.38)
     ax.set_xticks([7.0, 7.5, 8.0, 8.5])
-    ax.tick_params(axis="x", labelsize=FS["note"], colors=PALETTE["sub"], length=2.6, pad=3)
-    ax.tick_params(axis="y", length=0, pad=6)
+    ax.tick_params(axis="x", labelsize=FS["note"], colors=PALETTE["sub"], length=2.6, pad=4)
+    ax.tick_params(axis="y", length=0, pad=8)
     strip_axes(ax)
+
+    # 轴标题放绘图区左下，替代「裁判均分」这句在正文图注里的话
+    ax.text(0.0, -0.235, "裁判均分（qwen-max，0–10）", transform=ax.transAxes,
+            fontsize=FS["note"], color=PALETTE["sub"], va="center", ha="left")
 
     from matplotlib.lines import Line2D
     handles = [
-        Line2D([], [], marker="o", ls="none", color=PALETTE["baseline"],
-               markersize=5, label="裸跑"),
+        Line2D([], [], marker="o", ls="none", color=PALETTE["axis"],
+               markersize=5.0, markeredgecolor="white", markeredgewidth=0.8, label="裸跑"),
         Line2D([], [], marker="o", ls="none", color=PALETTE["kb"],
-               markersize=5.5, label="加知识库"),
-        Line2D([], [], color=PALETTE["kb"], lw=0.9, alpha=0.75, label="95% CI（配对差值）"),
+               markersize=5.8, markeredgecolor="white", markeredgewidth=0.8, label="加知识库"),
+        Line2D([], [], color=PALETTE["kb"], lw=1.0, alpha=0.85,
+               label="95% CI（配对差值）"),
     ]
-    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.113, 0.035), ncol=3,
-               frameon=False, fontsize=FS["note"], handletextpad=0.45,
-               columnspacing=1.7, borderpad=0)
-    for t in fig.legends[-1].get_texts():
+    leg = fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.133, 0.145),
+                     ncol=3, frameon=False, fontsize=FS["note"], handletextpad=0.4,
+                     columnspacing=1.8, borderpad=0)
+    for t in leg.get_texts():
         t.set_color(PALETTE["sub"])
 
     if not has_data:
         footer(fig, ["未找到原始评测结果，本图未绘制 95% CI（可跑 tools/kb_benchmark.py 复现）"],
-               y=0.50, gap=0.04)
+               x=0.133, y=0.055, gap=0.04)
 
     fig.savefig(out_path, dpi=300, facecolor="white")
     print("saved:", out_path)
@@ -211,13 +221,13 @@ def draw_dumbbell(rows, out_path):
     _row_lines(ax, n)
     for i, r in enumerate(rows):
         y = n - 1 - i
-        ax.plot([r["bare"], r["kb"]], [y, y], color=PALETTE["connector"], lw=5, zorder=2,
+        ax.plot([r["bare"], r["kb"]], [y, y], color=PALETTE["baseline-base"], lw=6, zorder=2,
                 solid_capstyle="round")
-        _dots(ax, r["bare"], y, "baseline", 1.35)
-        _dots(ax, r["kb"], y, "kb", 1.35)
-        ax.text(r["bare"], y + 0.30, f"{r['bare']:.3f}", ha="center", va="bottom",
+        _dot(ax, r["bare"], y, PALETTE["axis"], 46)
+        _dot(ax, r["kb"], y, PALETTE["kb"], 62)
+        ax.text(r["bare"], y + 0.28, f"{r['bare']:.3f}", ha="center", va="bottom",
                 fontsize=FS["value"], color=PALETTE["body"], weight="bold")
-        ax.text(r["kb"], y - 0.30, f"{r['kb']:.3f}", ha="center", va="top",
+        ax.text(r["kb"], y - 0.28, f"{r['kb']:.3f}", ha="center", va="top",
                 fontsize=FS["value"], color=PALETTE["kb"], weight="bold")
         ax.text(1.06, y + 0.14, f"+{r['gap']:.2f}", transform=ax.get_yaxis_transform(),
                 fontsize=FS["gain"], color=PALETTE["kb"], weight="bold", va="center", ha="left")
@@ -227,7 +237,8 @@ def draw_dumbbell(rows, out_path):
             fontsize=FS["note"], color=PALETTE["muted"], va="center", ha="left")
 
     ax.set_yticks([n - 1 - i for i in range(n)])
-    ax.set_yticklabels([r["name"] for r in rows], fontsize=FS["row"] + 0.5, color=PALETTE["body"])
+    ax.set_yticklabels([r["name"] for r in rows], fontsize=FS["row"], color=PALETTE["body"],
+                       weight="600")
     ax.set_xlim(*XLIM)
     ax.set_ylim(-0.5, n - 0.5)
     ax.set_xticks([7.0, 7.5, 8.0, 8.5])

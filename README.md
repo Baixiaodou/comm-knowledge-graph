@@ -14,7 +14,7 @@
 
 ---
 
-## 1 为什么做这件事
+## 🎯 1 为什么做这件事
 
 大语言模型回答专业课程问题时存在明显短板：对通信原理、信号处理这类需要**精确概念与严谨推理**的领域，常出现概念混淆、要点遗漏，甚至被「反直觉陷阱题」带偏。
 
@@ -36,7 +36,7 @@
 
 ---
 
-## 2 核心结果
+## 📊 2 核心结果
 
 ### 知识库对全部 5 个模型均为正增益
 
@@ -68,7 +68,7 @@
 
 ---
 
-## 3 知识库架构
+## 🌳 3 知识库架构
 
 ### 90 个节点构成三层知识结构
 
@@ -84,9 +84,9 @@
 
 | 类型 | 含义 | 特征 | 数量 |
 |------|------|------|:---:|
-| `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 39 |
-| `hub` | 分类枢纽 | 统领子节点、组织层次，无思维链 | 20 |
-| `leaf` | 叶子知识点 | 具体知识点，树的末端 | 31 |
+| 🧠 `core` | 核心概念 | 带思维链（为什么 → 推导 → 结论） | 39 |
+| 🗂 `hub` | 分类枢纽 | 统领子节点、组织层次，无思维链 | 20 |
+| 🍃 `leaf` | 叶子知识点 | 具体知识点，树的末端 | 31 |
 
 **七棵主题树**（每门课有一个贯穿性枢纽提供思维主线）
 
@@ -134,7 +134,7 @@ cot:
 
 ---
 
-## 4 检索方法
+## 🔍 4 检索方法
 
 ### 一条四步流水线
 
@@ -183,7 +183,7 @@ flowchart LR
 
 ---
 
-## 5 快速开始
+## 🚀 5 快速开始
 
 ```bash
 # 0. 安装依赖（LLM 调用 + YAML 解析）
@@ -217,7 +217,7 @@ streamlit run app.py                     # 浏览器自动打开 http://localhos
 
 ---
 
-## 6 应用与文档
+## 🧩 6 应用与文档
 
 ### 模拟面试训练器（review）
 
@@ -322,7 +322,7 @@ flowchart LR
 
 ---
 
-## 7 评测可信度
+## 🧪 7 评测可信度
 
 **评分机制**（裁判按标准答案打分）：
 
@@ -373,7 +373,7 @@ flowchart LR
 
 ---
 
-## 8 许可与结构
+## 📁 8 许可与结构
 
 <details>
 <summary><b>展开完整目录树</b></summary>
@@ -382,31 +382,31 @@ flowchart LR
 
 ```text
 knowledge-base/
-├── knowledge-v2/            # 知识库本体（核心）
-│   ├── nodes/               # 90 个 .md 节点（每个 = 一个知识点）
-│   └── _meta/               # tree.json（build_tree.py 自动生成）+ node-spec.md 规范
-├── benchmark/               # 评测体系
-│   ├── questions_full.json  # 116 题完整题库
-│   ├── questions_fuzzy.json # 20 道模糊大问题专项题库
-│   ├── multiturn_questions.json  # 44 组多轮追问题库
-│   ├── 评测报告_v6_完整实验史.html # 可视化评测报告
-│   ├── results/             # 评测原始数据（jsonl，不提交）
-│   └── archive/             # 历史题库与报告归档
-├── tools/                   # 工具脚本
-│   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分）
-│   ├── eval_followup.py     # 多轮追问评测
-│   ├── kb_lint.py           # 知识库完整性校验
-│   ├── build_tree.py        # 生成树结构索引
-│   ├── update_readme_stats.py  # 同步 README 统计数字与徽章
-│   ├── plot_style.py        # 配图统一视觉规范（绘图脚本共用）
-│   ├── plot_gain_chart.py   # 图 1 生成脚本（森林图 / 竖版哑铃）
-│   ├── plot_scoring_rules.py# 图 2 生成脚本（评分档位）
-│   ├── multiturn_rag/       # 追问记忆插件（FollowupRAG + Session）
-│   ├── fuzzy_hub_rag/       # 模糊大问题路由（benchmark + 5 策略）
-│   └── archive/             # 历史实验脚本（归档）
-├── review/                  # 模拟面试训练器（Streamlit，自包含）
-├── skills/kb-ingest/        # 文档吸收 skill 操作规程
-└── docs/                    # 设计文档 01-09
+├─ knowledge-v2/            # 知识库本体（核心）
+|   ├── nodes/               # 90 个 .md 节点（每个 = 一个知识点）
+|   └── _meta/               # tree.json（build_tree.py 自动生成）+ node-spec.md 规范
+├─ benchmark/               # 评测体系
+|   ├── questions_full.json  # 116 题完整题库
+|   ├── questions_fuzzy.json # 20 道模糊大问题专项题库
+|   ├── multiturn_questions.json  # 44 组多轮追问题库
+|   ├── 评测报告_v6_完整实验史.html # 可视化评测报告
+|   ├── results/             # 评测原始数据（jsonl，不提交）
+|   └── archive/             # 历史题库与报告归档
+├─ tools/                   # 工具脚本
+|   ├── kb_benchmark.py      # 评测主脚本（多模型 × 裁判打分）
+|   ├── eval_followup.py     # 多轮追问评测
+|   ├── kb_lint.py           # 知识库完整性校验
+|   ├── build_tree.py        # 生成树结构索引
+|   ├── update_readme_stats.py  # 同步 README 统计数字与徽章
+|   ├── plot_style.py        # 配图统一视觉规范（绘图脚本共用）
+|   ├── plot_gain_chart.py   # 图 1 生成脚本（森林图 / 竖版哑铃）
+|   ├── plot_scoring_rules.py# 图 2 生成脚本（评分档位）
+|   ├── multiturn_rag/       # 追问记忆插件（FollowupRAG + Session）
+|   ├── fuzzy_hub_rag/       # 模糊大问题路由（benchmark + 5 策略）
+|   └── archive/             # 历史实验脚本（归档）
+├─ review/                  # 模拟面试训练器（Streamlit，自包含）
+├─ skills/kb-ingest/        # 文档吸收 skill 操作规程
+└─ docs/                    # 设计文档 01-09
 ```
 
 </details>
