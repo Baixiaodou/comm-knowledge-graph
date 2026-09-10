@@ -17,6 +17,10 @@ import glob
 
 import yaml
 
+# Windows 默认 GBK 控制台会在打印 ✓ / 中文时抛 UnicodeEncodeError（曾导致本脚本本地必崩）
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NODES_DIR = os.path.join(BASE, "knowledge-v2", "nodes")
 README = os.path.join(BASE, "README.md")
@@ -25,6 +29,7 @@ SUBJECT = [
     ("comm", "通信原理"),
     ("dsp", "信号与系统 + DSP"),
     ("emf", "电磁场"),
+    ("math", "通信数学"),
     ("mob", "移动通信"),
     ("net", "计算机网络"),
     ("rsp", "随机信号处理"),
@@ -85,14 +90,22 @@ def compute(nodes):
 
 
 def update_readme(s):
-    """按顺序替换 README 中的统计位置，返回改动列表"""
+    """按顺序替换 README 中的统计位置，返回 (改动列表, 未匹配列表)
+
+    未匹配 = README 文案被改过、正则已失效——必须显式报出来，
+    否则自动同步会「静默失效」而数字看起来仍然正常。
+    """
     text = open(README, encoding="utf-8").read()
     changes = []
+    missed = []
 
     def sub(pattern, repl, desc, flags=0):
         nonlocal text
         new, n = re.subn(pattern, repl, text, count=1, flags=flags)
-        if n and new != text:  # 同值替换不计改动（真幂等）
+        if n == 0:
+            missed.append(desc)
+            return
+        if new != text:  # 同值替换不计改动（真幂等）
             changes.append(desc)
             text = new
 
@@ -101,36 +114,31 @@ def update_readme(s):
     sub(r"思维链-(\d+)-", f"思维链-{s['cot']}-", "badge 思维链数")
     sub(r"连接-(\d+)-", f"连接-{s['links']}-", "badge 连接数")
 
-    # 2. 三类节点 mermaid 图（core/hub/leaf）
-    sub(r"核心概念（\d+）", f"核心概念（{s['core']}）", "三类节点图 core")
-    sub(r"枢纽（\d+）", f"枢纽（{s['hub']}）", "三类节点图 hub")
-    sub(r"叶子（\d+）", f"叶子（{s['leaf']}）", "三类节点图 leaf")
-
-    # 3. 三类节点表格（| `core` | 核心概念 | 带思维链... | 31 |）
+    # 2. 三类节点表格（| `core` | 核心概念 | 带思维链... | 39 |）
     sub(r"(\| `core` \| 核心概念 \| 带思维链[^\n]*\| )\d+ \|", rf"\g<1>{s['core']} |",
         "三类节点表 core")
-    sub(r"(\| `hub` \| 分类文件夹 \| 统领子节点[^\n]*\| )\d+ \|", rf"\g<1>{s['hub']} |",
+    sub(r"(\| `hub` \| 分类枢纽 \| 统领子节点[^\n]*\| )\d+ \|", rf"\g<1>{s['hub']} |",
         "三类节点表 hub")
     sub(r"(\| `leaf` \| 叶子知识点 \| 具体知识点[^\n]*\| )\d+ \|", rf"\g<1>{s['leaf']} |",
         "三类节点表 leaf")
 
-    # 4. 六棵主题树 mermaid（学科名（N），全角括号）
+    # 3. 七棵主题树表格（| 通信原理 | 17 | 权衡 | ... |）
     for pre, name in SUBJECT:
         n = s["subjects"].get(pre, 0)
-        sub(rf"({re.escape(name)}（)\d+）", rf"\g<1>{n}）", f"学科树 {name}")
+        sub(rf"(\| {re.escape(name)} \| )\d+( \|)", rf"\g<1>{n}\g<2>", f"学科树 {name}")
 
-    # 5. links 描述：全库共 **271 条连接，其中 76 条跨树连接**
-    sub(r"全库共 \*\*\d+ 条连接，其中 \d+ 条跨树连接\*\*",
-        f"全库共 **{s['links']} 条连接，其中 {s['cross_links']} 条跨树连接**",
+    # 4. links 描述：全库 340 条连接中 **119 条跨树**
+    sub(r"全库 \d+ 条连接中 \*\*\d+ 条跨树\*\*",
+        f"全库 {s['links']} 条连接中 **{s['cross_links']} 条跨树**",
         "links 描述")
 
-    # 6. 项目结构：74 个 .md 节点（注意用全角 │）
+    # 5. 项目结构：90 个 .md 节点（注意用全角 │）
     sub(r"(│   ├── nodes/\s*# )\d+( 个 \.md 节点)",
         rf"\g<1>{s['total']}\g<2>", "项目结构 nodes 数")
 
     with open(README, "w", encoding="utf-8") as f:
         f.write(text)
-    return changes
+    return changes, missed
 
 
 def main():
@@ -139,11 +147,14 @@ def main():
     print(f"当前统计: 总 {s['total']} | core {s['core']} / hub {s['hub']} / leaf {s['leaf']} "
           f"| 思维链 {s['cot']} | 链接 {s['links']}（跨树 {s['cross_links']}）")
     print(f"学科分布: { {k: s['subjects'][k] for k, _ in SUBJECT} }")
-    changes = update_readme(s)
+    changes, missed = update_readme(s)
     if changes:
         print(f"\n已更新 README: {len(changes)} 处 -> {changes}")
     else:
         print("\nREADME 统计与知识库一致，无变化（幂等 ✓）")
+    if missed:
+        print(f"\n[警告] {len(missed)} 处正则未匹配（README 文案已变，自动同步失效）: {missed}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
