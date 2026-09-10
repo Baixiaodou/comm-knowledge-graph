@@ -165,8 +165,12 @@ def load_tree_index() -> str:
     return "\n".join(render(""))
 
 
-def load_nodes_by_ids(nids) -> str:
-    """返回指定节点的完整内容（content + links + cot）"""
+def load_nodes_by_ids(nids, include_cot=True) -> str:
+    """返回指定节点的完整内容（content + links + cot）
+
+    include_cot=False 时剥离 cot 字段（保留 content + links 关系描述），
+    供 CoT 消融实验使用：同题同选点，唯一变量 = 注入是否含思维链。
+    """
     import yaml
     blocks = []
     for f in sorted(os.listdir(NODES_DIR)):
@@ -188,9 +192,10 @@ def load_nodes_by_ids(nids) -> str:
                 if isinstance(link, dict):
                     links += f"- {fm.get('id')} ↔ {link.get('id')}: {link.get('relation', '')}\n"
             cot = ""
-            c = fm.get("cot")
-            if c and isinstance(c, dict):
-                cot = f"\n思维链：\n问题：{c.get('origin', '')}\n推导：{c.get('reasoning', '')}\n结论：{c.get('conclusion', '')}\n"
+            if include_cot:
+                c = fm.get("cot")
+                if c and isinstance(c, dict):
+                    cot = f"\n思维链：\n问题：{c.get('origin', '')}\n推导：{c.get('reasoning', '')}\n结论：{c.get('conclusion', '')}\n"
             blocks.append(f"### {fm.get('title')}（{fm.get('id')}）\n{fm.get('summary', '')}\n{content}\n{links}{cot}")
     return "\n\n".join(blocks)
 
@@ -666,6 +671,9 @@ def main():
     parser.add_argument("--questions", default="", help="指定题库 json 路径（默认 benchmark/questions.json）")
     parser.add_argument("--method", default="F",
                         help="选节点方式：A=模型自主 B=程序预筛 C=混合 D=树+Wiki(历史) F=最终方案(top3+links+精挑)")
+    parser.add_argument("--cot-ablation", action="store_true",
+                        help="CoT 消融：with_kb 每题只选点一次，同组节点分别注入「含 CoT」与「剥 CoT」各答一次"
+                             "（mode 记 with_kb / with_kb_no_cot），同轮同裁判配对，唯一变量=思维链字段")
     parser.add_argument("--modes", nargs="*", default=["bare", "with_kb"],
                         help="只跑指定模式（bare/with_kb），默认两个都跑（用于多 key 并行拆分）")
     args = parser.parse_args()
@@ -714,45 +722,56 @@ def main():
                     else:
                         nids = select_nodes(model, q["question"], tree_index)
                     # 第二轮：注入选中节点内容回答
-                    nodes_content = load_nodes_by_ids(nids)
-                    sys_prompt = KB_PROMPT + nodes_content if nodes_content else BASE_PROMPT
-                    ans = ask_model(model, sys_prompt, q["question"])
-                else:
-                    ans = ask_model(model, BASE_PROMPT, q["question"])
-                    nids = []
-                record = {
-                    "model": model["name"],
-                    "mode": mode,
-                    "qid": q["id"],
-                    "level": q["level"],
-                    "question": q["question"],
-                    "answer": ans,
-                    "method": args.method,
-                    "selected_nodes": nids,
-                    "expected_nodes": q.get("expected_nodes", []),
-                }
-                # 测量卫生：选节点失败/无内容 → 标记降级（裸跑成绩不得冒充 +知识库）
-                if mode == "with_kb" and not nodes_content:
-                    record["degraded"] = True
-                # 测量卫生：调用失败（[ERROR] 占位）→ 不送裁判打分（记 -1 由汇总剔除）
-                call_failed = ans.startswith("[ERROR]")
-                if not args.no_judge and not call_failed:
-                    j = judge_answer(q["question"], q["answer"], model["name"], ans)
-                    record["judge_score"] = j.get("score", -1)
-                    record["judge_comment"] = j.get("comment", "")
-                    print(f"  [{q['id']}] L{q['level']} 分={record['judge_score']}", flush=True)
-                else:
-                    if call_failed:
-                        record["judge_score"] = -1
-                        record["judge_comment"] = "调用失败(未打分)"
-                        print(f"  [{q['id']}] L{q['level']} 调用失败，跳过打分", flush=True)
+                    # CoT 消融：同题同选点，唯一变量 = 注入是否含思维链（同轮同裁判配对）
+                    if args.cot_ablation:
+                        variants = [
+                            ("with_kb", load_nodes_by_ids(nids, include_cot=True)),
+                            ("with_kb_no_cot", load_nodes_by_ids(nids, include_cot=False)),
+                        ]
                     else:
-                        print(f"  [{q['id']}] L{q['level']} 已答", flush=True)
-                results.append(record)
-                # 实时 append 到文件
-                with open(raw_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
-                time.sleep(0.3)  # 避免限流
+                        variants = [("with_kb", load_nodes_by_ids(nids))]
+                else:
+                    variants = [(mode, None)]
+
+                for mode_name, nodes_content in variants:
+                    if nodes_content is not None:
+                        sys_prompt = KB_PROMPT + nodes_content if nodes_content else BASE_PROMPT
+                        ans = ask_model(model, sys_prompt, q["question"])
+                    else:
+                        ans = ask_model(model, BASE_PROMPT, q["question"])
+                    record = {
+                        "model": model["name"],
+                        "mode": mode_name,
+                        "qid": q["id"],
+                        "level": q["level"],
+                        "question": q["question"],
+                        "answer": ans,
+                        "method": args.method,
+                        "selected_nodes": nids,
+                        "expected_nodes": q.get("expected_nodes", []),
+                    }
+                    # 测量卫生：选节点失败/无内容 → 标记降级（裸跑成绩不得冒充 +知识库）
+                    if mode_name.startswith("with_kb") and not nodes_content:
+                        record["degraded"] = True
+                    # 测量卫生：调用失败（[ERROR] 占位）→ 不送裁判打分（记 -1 由汇总剔除）
+                    call_failed = ans.startswith("[ERROR]")
+                    if not args.no_judge and not call_failed:
+                        j = judge_answer(q["question"], q["answer"], model["name"], ans)
+                        record["judge_score"] = j.get("score", -1)
+                        record["judge_comment"] = j.get("comment", "")
+                        print(f"  [{q['id']}] L{q['level']} {mode_name} 分={record['judge_score']}", flush=True)
+                    else:
+                        if call_failed:
+                            record["judge_score"] = -1
+                            record["judge_comment"] = "调用失败(未打分)"
+                            print(f"  [{q['id']}] L{q['level']} 调用失败，跳过打分", flush=True)
+                        else:
+                            print(f"  [{q['id']}] L{q['level']} 已答", flush=True)
+                    results.append(record)
+                    # 实时 append 到文件
+                    with open(raw_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    time.sleep(0.3)  # 避免限流
 
     print(f"\n原始结果已保存: {raw_path}", flush=True)
 
