@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/多轮追问-44_组-2f855a?style=flat-square" alt="multiturn">
   <img src="https://img.shields.io/badge/模拟面试-Streamlit-2f855a?style=flat-square" alt="streamlit">
   <img src="https://img.shields.io/badge/license-MIT-9aa5b1?style=flat-square" alt="license">
+  <img src="https://github.com/Baixiaodou/comm-knowledge-graph/actions/workflows/ci.yml/badge.svg" alt="CI">
 </p>
 
 </div>
