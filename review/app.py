@@ -17,7 +17,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import streamlit as st
-from streamlit.components.v1 import html as components_html
 
 import config
 import db
@@ -39,6 +38,19 @@ def _esc(s) -> str:
     return html.escape(str(s or ""))
 
 
+def _frag_rerun():
+    """fragment 级局部刷新；整页运行上下文中回退为整页 rerun。
+
+    st.rerun(scope="fragment") 仅在 fragment rerun 内合法——浏览器里点击 fragment 内
+    按钮天然触发局部 rerun，但整页渲染路径（首屏、测试框架、部分恢复场景）直接调用会抛
+    StreamlitInvalidLayoutContextError。回退整页刷新略重但任何路径都能推进。
+    """
+    try:
+        st.rerun(scope="fragment")  # 注意：本行不可改成 _frag_rerun()，会自递归
+    except Exception:  # noqa: BLE001
+        st.rerun()
+
+
 # ---------------- 侧栏：API 配置（本地安全存储，不进 GitHub） ----------------
 def render_api_panel():
     """API key 页面配置：只存本机 review/.env（.gitignore 已排除），脱敏显示，保存即生效。"""
@@ -48,7 +60,7 @@ def render_api_panel():
         if status["configured"]:
             st.caption(f"✅ {status['provider']} · key `{status['masked']}` · 模型 `{status['model']}`")
         else:
-            st.caption("❌ 未配置 LLM API key，面试无法开始。")
+            st.caption("❌ 未配置 API key——将以「离线自评模式」出题（题目来自节点思维链，自评对错）。配置 key 后升级为 AI 面试官。")
         new_key = st.text_input(
             "DeepSeek API Key",
             type="password",
@@ -211,11 +223,17 @@ def render_review(review):
         st.caption(f"**下次面试建议**：{review['next_suggestion']}")
 
 
-def _render_review_block(sid):
+def _render_review_block(sid, offline=False):
     """报告页评审区：已有评审直接展示；否则给生成按钮（约 1 次调用，失败不阻塞）。"""
     review = interview.get_review(sid)
     if review:
         render_review(review)
+        return
+    if offline:
+        st.caption("自评场次无 AI 复核（评审官诊断为 LLM 功能，配置 API key 后的场次可用）。")
+        return
+    if not llm_ready:
+        st.caption("未配置 API key，评审官诊断暂不可用。")
         return
     if st.button(
         "🔎 生成评审官诊断（校准判定 + 复习计划）",
@@ -253,15 +271,21 @@ def render_report(rpt):
     # 档位文案由 config.VERDICT_SCORE_RANGE 生成，改档位时一处生效（勿手写平行文案）
     vcn = config.VERDICT_CN
     range_txt = " · ".join(f"{vcn[k]} {lo}+" if hi == 100 else f"{vcn[k]} {lo}~{hi}" for k, (lo, hi) in config.VERDICT_SCORE_RANGE.items())
-    st.caption(
-        f"**评分口径**：每题由 AI 面试官按要点覆盖率打 0~100 分（{range_txt}），"
-        f"本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
-    )
+    if cfg.get("offline"):
+        st.caption(
+            f"**评分口径（自评模式）**：每题按自评档位给锚点分（答对 100 / 部分 60 / 答错 20 / 未答 0），"
+            f"本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
+        )
+    else:
+        st.caption(
+            f"**评分口径**：每题由 AI 面试官按要点覆盖率打 0~100 分（{range_txt}），"
+            f"本场得分 = 各题平均 **{rpt['score_pct']}**。档位：{band_txt}。"
+        )
     st.markdown(f"**评级 {rpt['grade']}**　{rpt['grade_cn']}")
 
     # —— 判定校准官评审区（仅已结束场次；报告与历史 Tab 共用本函数故两处都出现）——
     if rpt["session"]["status"] == "finished":
-        _render_review_block(rpt["session"]["session_id"])
+        _render_review_block(rpt["session"]["session_id"], offline=bool(rpt["cfg"].get("offline")))
 
     if rpt["weak_nodes"]:
         st.markdown("#### 🔴 薄弱知识点（建议先补这些节点原文）")
@@ -357,6 +381,84 @@ def render_setup(disabled):
         except Exception as e:  # noqa: BLE001
             st.error(f"开场失败（已撤销本场）：{e}")
             interview.delete_session(sid)
+    elif submitted:
+        # 离线自评模式：题目取自节点思维链（本地生成，不调 LLM），自评对错推进
+        cfg = {
+            "depth": depth,
+            "style": style,
+            "target_rounds": config.DURATION_ROUNDS[duration],
+            "review_mode": review_mode,
+            "weak_first": bool(weak_first),
+        }
+        try:
+            sid = interview.new_offline_session(subject_id, nodes[subject_id].title, cfg)
+        except Exception as e:  # noqa: BLE001
+            st.error(f"开场失败：{e}")
+            return
+        st.session_state["iv_sid"] = sid
+        st.session_state.pop("iv_feedback", None)
+        st.rerun()
+
+
+# ---------------- 离线自评：事件流（提交 → 自评 → 推进） ----------------
+def _offline_advance(sid: str, round_no: int, answer: str, verdict: str):
+    """自评落盘并推进；结束后整页刷新切报告。"""
+    st.session_state.pop("iv_offline_pending", None)
+    out = interview.submit_offline_answer(sid, answer, verdict)
+    # 清理历史输入框（与在线模式同款防残留）
+    for k in [k for k in st.session_state if k.startswith("iv_ans_")]:
+        del st.session_state[k]
+    if out.get("conflict"):
+        st.warning(out.get("reason", "检测到重复提交"))
+        _frag_rerun()
+        return
+    if out.get("finished"):
+        st.session_state.pop("iv_feedback", None)
+        st.rerun()  # 整页：切到结业报告
+        return
+    j = out.get("judged") or {}
+    st.session_state["iv_feedback"] = {
+        "round_no": round_no,
+        "verdict": j.get("verdict"),
+        "score": j.get("score"),
+        "comment": j.get("comment", ""),
+        "reference": j.get("reference", ""),
+    }
+    _frag_rerun()
+
+
+def _render_offline_events(sid: str, t: dict, do_submit: bool, do_skip: bool, answer: str):
+    """离线自评交互：提交后先自评对错再进下一题；跳过直接记「未答上」。"""
+    pending = st.session_state.get("iv_offline_pending")
+    if do_skip and pending is None:
+        _offline_advance(sid, t["round_no"], "", "unanswered")
+        return
+    if do_submit and answer and pending is None:
+        st.session_state["iv_offline_pending"] = {"round_no": t["round_no"], "answer": answer}
+        _frag_rerun()
+        return
+    if pending is None:
+        return
+    if pending.get("round_no") != t["round_no"]:  # 状态过期（题已推进）→ 丢弃重画
+        st.session_state.pop("iv_offline_pending", None)
+        _frag_rerun()
+        return
+    st.markdown("---")
+    st.markdown("**刚才这题你答得怎么样？自评后进入下一题（答案要点会立即展示对照）**")
+    c1, c2, c3, c4 = st.columns(4)
+    picked = None
+    if c1.button("✅ 答对", use_container_width=True):
+        picked = "correct"
+    elif c2.button("🔶 部分正确", use_container_width=True):
+        picked = "partial"
+    elif c3.button("❌ 答错", use_container_width=True):
+        picked = "wrong"
+    elif c4.button("↩️ 重新作答", use_container_width=True):
+        st.session_state.pop("iv_offline_pending", None)
+        _frag_rerun()
+        return
+    if picked:
+        _offline_advance(sid, t["round_no"], pending.get("answer", ""), picked)
 
 
 @st.fragment
@@ -388,9 +490,9 @@ def render_live_fragment(sid: str):
     if target > 0:
         st.progress(min(1.0, answered_before / target))
 
-    # 即时反馈（上轮判定 + 得分 + 参考答案；仅非「结束后一起看」模式展示）
+    # 即时反馈（上轮判定 + 得分 + 参考答案；仅非「结束后一起看」模式展示；自评模式恒展示——自评后立即对照才有复习价值）
     fb = st.session_state.get("iv_feedback")
-    if fb and cfg.get("review_mode") != "结束后一起看" and (fb.get("round_no") or 0) < t["round_no"]:
+    if fb and (cfg.get("offline") or cfg.get("review_mode") != "结束后一起看") and (fb.get("round_no") or 0) < t["round_no"]:
         comment = fb.get("comment", "") if show_comment_enabled(cfg) else ""
         score_txt = f" · 得分 **{fb['score']}**" if fb.get("score") is not None else ""
         if comment:
@@ -409,7 +511,7 @@ def render_live_fragment(sid: str):
     with st.container(border=True):
         st.markdown(f"#### 第 {t['round_no']} 题")
         st.markdown(t["question"])
-        if cfg.get("review_mode") == "结束后一起看":
+        if cfg.get("review_mode") == "结束后一起看" and not cfg.get("offline"):
             st.caption("（真实面试模式——当场不公布判定，全部结束后在报告里一起看）")
 
     # text_area 的 key 绑定题号：提交/跳过后 round_no+1 → widget 身份改变 → 全新实例必然空。
@@ -442,6 +544,9 @@ def render_live_fragment(sid: str):
     if do_submit and not answer:
         st.warning("回答为空——若确实没答上，请点「没答上 / 跳过」。")
         return
+    if cfg.get("offline"):
+        _render_offline_events(sid, t, do_submit, do_skip, answer)
+        return
     if do_submit or do_skip:
         # 清理全部历史输入框状态（per-round key 随题号变化，新题天然空；防 session_state 累积）
         stale = [k for k in st.session_state if k.startswith("iv_ans_")]
@@ -458,7 +563,7 @@ def render_live_fragment(sid: str):
             return
         if out.get("conflict"):
             st.warning(out.get("reason", "检测到重复提交"))
-            st.rerun(scope="fragment")  # 重读最新状态，避免停留在过期题目
+            _frag_rerun()  # 重读最新状态，避免停留在过期题目
             return
         if out.get("finished"):
             st.session_state.pop("iv_feedback", None)
@@ -472,14 +577,18 @@ def render_live_fragment(sid: str):
                 "comment": out["judged"].get("comment", ""),
                 "reference": out["judged"].get("reference", ""),
             }
-        st.rerun(scope="fragment")  # 局部刷新：展示新题 + 即时反馈，图谱不重建
+        _frag_rerun()  # 局部刷新：展示新题 + 即时反馈，图谱不重建
 
 
 def render_tab_live():
     st.header("🎤 模拟面试")
     if not llm_ready:
-        st.warning("未配置 LLM API key。点击左侧栏「🔑 API 配置」粘贴你的 DeepSeek API Key 并保存即可开始（key 只存本机，不会上传）。")
-        return
+        st.info(
+            "未配置 API key，当前为 **离线自评模式**：题目取自知识节点的思维链问题起点，"
+            "作答后由你自评对错，结业报告与图谱着色照常生成（全程零 API 调用）。\n\n"
+            "想升级为 AI 面试官（自动出题 / 判定 / 追问），点左侧栏「🔑 API 配置」粘贴 "
+            "DeepSeek API Key 并保存即可（key 只存本机 `review/.env`，不会上传）。"
+        )
 
     sid = active_session_id()
     if sid:
@@ -547,7 +656,8 @@ def render_tab_graph():
         highlight = None
 
     opt = graph_viz.build_option(nodes, children, mastery, highlight_ids=highlight)
-    components_html(graph_viz.graph_html(opt, 620), height=680)
+    # st.iframe 为 st.components.v1.html 的正式替代（后者已进入移除倒计时）
+    st.iframe(graph_viz.graph_html(opt, 620), height=680)
 
 
 # ---------------- Tab3：历史与薄弱 ----------------

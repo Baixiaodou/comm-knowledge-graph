@@ -103,10 +103,33 @@ flowchart LR
 
 ## 🚀 快速开始
 
-```bash
-# 0. 安装依赖（LLM 调用 + YAML 解析）
-pip install -r tools/requirements.txt
+> **没有 API key 也能玩**：模拟面试训练器内置**离线自评模式**——题目取自知识节点自带的思维链问题起点，作答后自评对错，结业报告与知识图谱着色照常生成，全程零 API 调用。配置 DeepSeek key 后自动升级为 AI 面试官（自动出题 / 判定 / 追问）。
 
+### 方式一：Windows 双击（推荐给非程序员）
+
+```
+下载仓库 → 双击 review/启动模拟面试.cmd
+```
+
+启动器会自动安装 uv、同步依赖（首次约 2 分钟，需联网）并拉起浏览器。之后每次启动秒开。
+
+### 方式二：uv 命令行（跨平台）
+
+```bash
+uv sync                        # 自动建虚拟环境 + 装依赖（Python 3.10+）
+uv run streamlit run review/app.py
+```
+
+### 方式三：传统 pip
+
+```bash
+pip install -r review/requirements.txt
+streamlit run review/app.py
+```
+
+### 知识库工具脚本
+
+```bash
 # 1. 校验知识库完整性
 python tools/kb_lint.py
 
@@ -123,15 +146,7 @@ python tools/kb_benchmark.py --limit 5   # 先跑 5 题测试；全量去掉 --l
 python tools/eval_followup.py --limit 5
 ```
 
-### 想直接玩「AI 模拟面试」插件（3 步）
-
-```bash
-cd review
-pip install -r requirements.txt          # 依赖极少：streamlit + openai + python-dotenv
-streamlit run app.py                     # 浏览器自动打开 http://localhost:8501
-```
-
-打开页面后：左侧栏「API 配置」粘贴 Key（DeepSeek / SiliconFlow 均可，仅存本地 `review/.env`，不提交）→ 选科目/时长/深度/风格 → 开始面试 → 逐轮作答看判定，结束看结业报告。
+打开页面后：选科目/时长/深度/风格 → 开始面试 → 逐轮作答，结束看结业报告与图谱着色。想启用 AI 面试官，在左侧栏「API 配置」粘贴 Key（DeepSeek / SiliconFlow 均可，仅存本地 `review/.env`，不提交）。
 
 > review 插件自包含（`review/` 单独拷走即可跑，只读 `knowledge-v2/nodes` 节点数据），界面/成本/数据模型详见 [review/README.md](review/README.md)。
 

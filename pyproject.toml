@@ -1,0 +1,17 @@
+[project]
+name = "comm-knowledge-graph"
+version = "1.0.0"
+description = "通信工程课程知识库 RAG：树+Wiki+思维链知识图谱、116 题评测、AI 模拟面试训练器（支持无 API key 离线自评模式）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Baixiaodou" }]
+keywords = ["rag", "knowledge-graph", "communication-engineering", "streamlit", "study-tool"]
+
+# 依赖即 review/ 模拟面试训练器的全部依赖（tools/ 脚本也兼容此集）
+dependencies = [
+    "streamlit>=1.40,<2.0",
+    "openai>=1.0,<2.0",
+    "PyYAML>=6.0,<7.0",
+    "python-dotenv>=1.0,<2.0",
+]

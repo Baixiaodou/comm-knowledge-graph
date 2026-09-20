@@ -597,6 +597,111 @@ def manual_finish(sid: str):
     mark_finished(sid)
 
 
+# ---------------- 离线自评模式（无 API key 可用的降级路径） ----------------
+# 题目离线生成（节点思维链的"问题起点"），判定由本人自评给出，
+# 报告/图谱着色等全部本地聚合照常——首次体验零门槛，之后配 key 升级 AI 模式。
+
+def _offline_question(nid: str) -> str:
+    """从节点生成离线问题：优先思维链 origin（它本来就是问题起点），否则按标题发问。"""
+    n = _nodes.get(nid)
+    if not n:
+        return ""
+    origin = (n.cot or {}).get("origin") if isinstance(n.cot, dict) else ""
+    origin = str(origin or "").strip()
+    if origin:
+        return origin
+    return f"请讲解「{n.title}」：它是什么、为什么需要它、关键机制或公式是什么？"
+
+
+def _offline_reference(nid: str) -> str:
+    """离线参考要点：节点摘要 + 思维链结论（判后对照用，竖线分隔与在线模式一致）。"""
+    n = _nodes.get(nid)
+    if not n:
+        return ""
+    parts = []
+    if n.summary:
+        parts.append(f"摘要：{n.summary}")
+    concl = (n.cot or {}).get("conclusion") if isinstance(n.cot, dict) else ""
+    if str(concl or "").strip():
+        parts.append(f"结论：{concl}")
+    return " | ".join(parts)
+
+
+def new_offline_session(scope_root: str, scope_title: str, cfg: dict) -> str:
+    """开一场离线自评面试：题目预先可确定（不调 LLM），第 1 题直接落盘。"""
+    cfg = dict(cfg, offline=True)
+    content = _scope_content(scope_root, cfg.get("weak_first", True))
+    if not content:
+        raise ValueError("该范围没有可出题的内容节点（core/leaf）")
+    sid = uuid.uuid4().hex[:12]
+    with get_conn() as c:
+        c.execute(
+            "INSERT INTO interview_sessions(session_id, scope_root, scope_title, config_json, status, created_at) "
+            "VALUES(?,?,?,?,?,?)",
+            (sid, scope_root, scope_title, json.dumps(cfg, ensure_ascii=False), "active", _now()),
+        )
+    _save_turn(sid, 1, _offline_question(content[0]), [content[0]])
+    return sid
+
+
+def submit_offline_answer(sid: str, answer: str, verdict: str) -> dict:
+    """离线模式提交：verdict 为本人自评（correct/partial/wrong/unanswered），
+    落盘后推进下一题（下一个未问过的内容节点，weak_first 排序仍生效）。"""
+    session = get_session(sid)
+    if not session or session["status"] != "active":
+        return {"finished": True, "reason": "会话不存在或已结束"}
+    cfg = json.loads(session["config_json"])
+    target = cfg["target_rounds"]
+
+    turns = get_turns(sid)
+    current = next((t for t in reversed(turns) if t["user_answer"] is None), None)
+    if not current:
+        mark_finished(sid)
+        return {"finished": True, "reason": "没有待作答的题目，会话已结束"}
+
+    if verdict not in VERDICTS:
+        verdict = "partial"
+    cur_nodes = safe_json_loads(current["node_ids"], []) or []
+    judgment = {
+        "verdict": verdict,
+        "score": _norm_score(None, verdict),  # 自评无连续分，按档位回退锚点
+        "comment": "自评模式：判定由本人给出",
+        "reference": _offline_reference(cur_nodes[0]) if cur_nodes else "",
+        "weak_nodes": cur_nodes if verdict in WEAK_VERDICTS else [],
+    }
+    ok = db.update_turn_if_pending(sid, current["round_no"], answer or "（未作答）", json.dumps(judgment, ensure_ascii=False))
+    if not ok:
+        return {
+            "finished": False,
+            "conflict": True,
+            "reason": "该题刚刚已被提交（重复点击或多窗口同时作答），请刷新查看",
+            "judged": None,
+            "next": None,
+        }
+
+    answered_before = len([t for t in turns if t["user_answer"] is not None])
+    if (answered_before + 1) >= target:
+        mark_finished(sid)
+        return {"finished": True, "reason": "已达到目标轮数，面试结束", "judged": judgment, "next": None}
+
+    used: set = set()
+    for t in turns:
+        used.update(safe_json_loads(t["node_ids"], []) or [])
+    content = _scope_content(session["scope_root"], cfg.get("weak_first", True))
+    nxt = next((nid for nid in content if nid not in used), None)
+    if not nxt:
+        mark_finished(sid)
+        return {"finished": True, "reason": "范围内内容节点已全部问完", "judged": judgment, "next": None}
+
+    rnd = current["round_no"] + 1
+    _save_turn(sid, rnd, _offline_question(nxt), [nxt])
+    return {
+        "finished": False,
+        "judged": judgment,
+        "next": {"round_no": rnd, "question": _offline_question(nxt), "node_ids": [nxt]},
+    }
+
+
 # ---------------- 报告（本地聚合，无 LLM） ----------------
 
 def build_report(sid: str) -> dict:

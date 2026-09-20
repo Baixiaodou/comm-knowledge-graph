@@ -41,11 +41,22 @@
 ## 运行
 
 ```bash
+# 方式一：Windows 双击本目录的 启动模拟面试.cmd（自动装 uv + 依赖，推荐）
+
+# 方式二：uv（仓库根目录执行）
+uv sync
+uv run streamlit run review/app.py
+
+# 方式三：pip
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-浏览器打开 http://localhost:8501 ，首次使用在**左侧栏「🔑 API 配置」**粘贴 API Key 保存即可（见下），无需手动编辑文件。
+浏览器打开 http://localhost:8501 。
+
+**没有 API key 也能直接用**：应用会自动进入**离线自评模式**——题目取自知识节点思维链的问题起点，作答后自评对错（答对/部分/答错），即时展示参考要点，结业报告与图谱着色照常生成，全程零 API 调用。配置 key 后自动升级为 AI 面试官模式。
+
+首次使用在**左侧栏「🔑 API 配置」**粘贴 API Key 保存即可（见下），无需手动编辑文件。
 
 ### 配置 API Key（两种方式，任选）
 

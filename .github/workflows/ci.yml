@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  kb-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install minimal deps
+        run: pip install PyYAML python-dotenv
+
+      - name: Syntax check (review/ + tools/)
+        run: python -m compileall -q review tools
+
+      - name: Knowledge base structure lint (kb_lint)
+        run: python tools/kb_lint.py
+
+      - name: Knowledge base stats (kb_stats)
+        run: python tools/kb_stats.py
