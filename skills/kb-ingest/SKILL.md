@@ -12,11 +12,14 @@ description: 把用户提供的 Word/txt 文档或一段文字按本仓库 RAG �
 1. 通读 [`knowledge-v2/_meta/node-spec.md`](../../knowledge-v2/_meta/node-spec.md)：frontmatter 十字段与 leaf/hub/core 判定铁律；
 2. 读仓库 README 的「结论式写法」章节：五段式正文模板；
 3. 抽读 1 个现有节点感受文风（推荐 `nodes/comm-awgn.md`：summary = 正文首句、逐词拆解小节）；
-4. 摸清库里已有什么：列出 `knowledge-v2/nodes/*.md` 全部节点的 id / title / type / summary（可对节点文件批量 Grep frontmatter 字段），这是后面判定的对照物。七棵主题树前缀：`math / comm / dsp / mob / rsp / emf / net`。
+4. 摸清库里已有什么：列出 `knowledge-v2/nodes/*.md` 全部节点的 id / title / type / summary（可对节点文件批量 Grep frontmatter 字段），这是后面判定的对照物。七棵主题树前缀：`math / comm / dsp / mob / rsp / emf / net`；
+5. 查重：读 `knowledge-v2/raw/_ingest-log.md`（文件不存在视为无记录）。若输入文件已记录在案，停下来问用户——是更新式重吸收（只补增量），还是换一份材料——不要闷头重跑一遍。
 
 ## 第 1 步：分流判定（只判定，不落盘）
 
-把输入切成合理段落（docx 有标题样式按样式切；纯文本按标题行正则或语义分段），对每段的候选知识点**四选一**：
+若输入是语音转写稿（口述/逐字稿），切段前先校对同音字与术语转写错误——典型如「中极函数→冲激函数」「memo→MIMO」「wag信道→AWGN」「数据特征→数值特征」「中心极限定律→中心极限定理」；拿不准的不要擅自改，标出来在判定表里问用户。
+
+然后把输入切成合理段落（docx 有标题样式按样式切；纯文本按标题行正则或语义分段），对每段的候选知识点**四选一**：
 
 | 判定 | 条件 | 后续动作 |
 |------|------|----------|
@@ -49,6 +52,8 @@ python tools/update_readme_stats.py # 同步 README 统计数字（幂等）
 
 三条全绿才算完成；lint 有错回到第 2 步修节点。
 
+全绿后在 `knowledge-v2/raw/_ingest-log.md` 追加一行（文件不存在则创建）：`- YYYY-MM-DD <源文件名> → 并入 N 处 / 新建 M 节点 / 跳过 K 段`。这行日志是第 0 步查重的依据，必写——漏写等于没吸收完。
+
 ## Word 解析辅助
 
 `.docx` 在 AI 环境不能直读时，跑这段转出带层级的文本再走第 0 步：
@@ -74,6 +79,6 @@ EOF
 ## 边界
 
 - 一次吸收一份资料；多份分多次进行，避免单次对话质量下降；
-- 只新增/修订 `knowledge-v2/nodes/*.md`；`_meta/tree.json`、README 统计一律交给第 3 步的脚本；
+- 只新增/修订 `knowledge-v2/nodes/*.md` 与 `knowledge-v2/raw/_ingest-log.md`；`_meta/tree.json`、README 统计一律交给第 3 步的脚本；
 - 开始吸收前确认 git 工作区干净（改动可直接回滚）；若存在未提交改动，先提醒用户处理再动笔；完成后是否 commit 由用户决定；
-- 缺 API key 不是问题——skill 形态下判定和撰写由当前 AI 完成，只有第 3 步本地脚本会用到 Python 环境（无第三方依赖）。
+- 缺 API key 不是问题——skill 形态下判定和撰写由当前 AI 完成，只有第 3 步本地脚本会用到 Python 环境，且依赖 PyYAML（`pip install pyyaml`，三个收尾脚本解析 frontmatter 都要用）。
