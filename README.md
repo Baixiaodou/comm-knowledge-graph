@@ -17,7 +17,25 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/img/kb_graph.png" alt="知识图谱全景：90 节点 · 340 连接 · 7 棵主题树" width="94%">
+</p>
+
 > 面向**专业知识问答**的 RAG（检索增强生成）知识图谱项目。核心贡献有三：① 把通信工程课程知识组织为「节点 + 树层级 + Wiki 关联 + 思维链」三层结构；② 配套多模型评测体系，验证了优于朴素检索的最终检索方案（top-3 + links 扩展 + LLM 精挑）；③ 在检索流水线上实现多轮追问记忆，让「那反过来呢」「补零呢」这类裸指代追问也能接续检索。
+
+<details>
+<summary><b>▲ 上面这张图谱是怎么来的</b>（点击展开）</summary>
+
+由 [`tools/render_readme_figures.py`](tools/render_readme_figures.py) 直接从仓库数据实时渲染，非手绘装饰图——每个节点、每条弧线都对应 `knowledge-v2/` 里的真实数据：
+
+- **扇区 = 七棵主题树**，扇区宽度 ∝ 子树节点数；
+- **空心大圆 = 分类枢纽（hub）**，实心圆 = 知识点（core / leaf）；
+- **圆环 = 带思维链（cot）的节点**，全库 39 个；
+- **彩色弧线 = 跨树 Wiki 连接**——树只在上下级之间连边，弧线展示的正是「OFDM 用 FFT 实现」这类跨课关联（全库 340 条连接中 119 条跨树）。
+
+知识本体在 [`knowledge-v2/`](knowledge-v2/)，任何 AI 编码助手照 [`skills/kb-ingest/SKILL.md`](skills/kb-ingest/SKILL.md) 的规程即可向图中增量添加节点。
+
+</details>
 
 ## 目录
 
@@ -379,6 +397,10 @@ flowchart LR
 
 基于知识库的 Streamlit Web 应用：模拟研究生复试的专业课面试——面试官沿所选科目子树出题，**每轮一次 LLM 调用 = 判定上一答 + 出下一题**，答对才往深追、答错下探基础，过程不泄露对错，结束后出结业报告。
 
+<p align="center">
+  <img src="docs/img/review_app.png" alt="AI 模拟面试训练器：沿知识树逐层追问" width="82%">
+</p>
+
 ```mermaid
 flowchart LR
     G["知识图谱<br/>节点颜色 = 面试掌握度"] --> N["选科目子树 + 时长/深度/风格"]
@@ -497,12 +519,13 @@ knowledge-base/
 │   ├── kb_lint.py           # 知识库完整性校验
 │   ├── build_tree.py        # 生成树结构索引
 │   ├── update_readme_stats.py  # 同步 README 统计徽章
+│   ├── render_readme_figures.py  # 渲染 README 配图（知识图谱全景 / 增益图）
 │   ├── multiturn_rag/       # 追问记忆插件（FollowupRAG + Session）
 │   ├── fuzzy_hub_rag/       # 模糊大问题路由（benchmark + 5 策略）
 │   └── archive/             # 历史实验脚本（归档）
 ├── review/                  # AI 模拟面试训练器（Streamlit，自包含）
 ├── skills/kb-ingest/        # 文档吸收 skill 操作规程
-└── docs/                    # 设计文档 01-09
+└── docs/                    # 设计文档 01-09 + img/（README 配图）
 ```
 
 </details>
